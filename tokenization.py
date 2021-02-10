@@ -19,14 +19,6 @@ party_encoder = LabelEncoder()
 subjectivity_encoder = LabelEncoder()
 
 
-def returnStatementTokenizer():
-    return statement_tokenizer
-
-
-def returnLabelEncoder():
-    return label_encoder
-
-
 def tokenize(tokenizer, data):
     tokenizer.fit_on_texts(data)
     sequences = tokenizer.texts_to_sequences(data)
@@ -53,32 +45,27 @@ def normalize(df):
 
 
 def process(data):
-    data = data.drop('id', axis=1)
-    data['statement'] = tokenize(statement_tokenizer, data['statement'])
-    data['subject'] = tokenize(subject_tokenizer, data['subject'])
-    data['speaker'] = encode(speaker_encoder, data['speaker'])
-    data['context'] = encode(context_encoder, data['context'])
-    data["speaker's job title"] = encode(sjt_encoder,
-                                         data["speaker's job title"])
-    data['state'] = encode(state_encoder, data['state'])
-    data['party'] = encode(party_encoder, data['party'])
+    label = encode(label_encoder, data['label'])
+    statement = tokenize(
+        statement_tokenizer, data['statement'])
+    subject = tokenize(subject_tokenizer, data['subject'])
+    speaker = encode(speaker_encoder, data['speaker'])
+    sjt = encode(sjt_encoder, data["speaker's job title"])
+    state = encode(state_encoder, data['state'])
+    party = encode(party_encoder, data['party'])
+    btc = np.array(data['barely true counts'])
+    fc = np.array(data['false counts'])
+    htc = np.array(data['half true counts'])
+    mtc = np.array(data['mostly true counts'])
+    potc = np.array(data['pants on fire counts'])
+    context = encode(context_encoder, data['context'])
+    polarity = np.array(data['polarity'])
+    swc = np.array(data['subjectiveWordsCount'])
+    subjectivity = encode(subjectivity_encoder, data['subjectivity'])
 
-    data['label'] = encode(label_encoder, data['label'])
-    data['subjectivity'] = encode(subjectivity_encoder, data['subjectivity'])
-    return data
+    x_train = list(map(list, zip(statement, subject, speaker,
+                                 sjt, state, party, btc, fc, htc, mtc, potc, context, polarity, swc)))
 
+    y_train = list(map(list, zip(label, subjectivity)))
 
-def main():
-    liar_train = process(normalize(pd.read_csv(
-        './cleanDatasets/clean_liar_train.csv')))
-    print(liar_train)
-    liar_train.to_pickle('./cleanDatasets/tokenized_liar_train.pkl')
-    liar_test = process(normalize(pd.read_csv(
-        './cleanDatasets/clean_liar_test.csv')))
-    liar_test.to_pickle('./cleanDatasets/tokenized_liar_test.pkl')
-    liar_valid = process(normalize(pd.read_csv(
-        './cleanDatasets/clean_liar_valid.csv')))
-    liar_valid.to_pickle('./cleanDatasets/tokenized_liar_valid.pkl')
-
-
-main()
+    return np.array(x_train, dtype=object), np.array(y_train, dtype=object)

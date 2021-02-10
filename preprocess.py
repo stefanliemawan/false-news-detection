@@ -49,18 +49,18 @@ def renameLiarColumn(dataframe):
 
 
 def initLiarData():
-    liarTrain = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_train_labeled.csv')
+    liar_train = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_train_labeled.csv')
+                                       ).reset_index(drop=True), 'statement')
+    liar_train.to_csv('./cleanDatasets/clean_liar_train.csv',
+                      encoding='utf-8-sig', index=False)
+    liar_test = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_test_labeled.csv')
                                       ).reset_index(drop=True), 'statement')
-    liarTrain.to_csv('./cleanDatasets/clean_liar_train.csv',
+    liar_test.to_csv('./cleanDatasets/clean_liar_test.csv',
                      encoding='utf-8-sig', index=False)
-    liarTest = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_test_labeled.csv')
-                                     ).reset_index(drop=True), 'statement')
-    liarTest.to_csv('./cleanDatasets/clean_liar_test.csv',
-                    encoding='utf-8-sig', index=False)
-    liarValid = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_valid_labeled.csv')
-                                      ).reset_index(drop=True), 'statement')
-    liarValid.to_csv('./cleanDatasets/clean_liar_valid.csv',
-                     encoding='utf-8-sig', index=False)
+    liar_valid = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_valid_labeled.csv')
+                                       ).reset_index(drop=True), 'statement')
+    liar_valid.to_csv('./cleanDatasets/clean_liar_valid.csv',
+                      encoding='utf-8-sig', index=False)
 
 
 def main():
