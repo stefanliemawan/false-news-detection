@@ -34,24 +34,14 @@ def sequenceModel(n_output):
     return model
 
 
-# def clean_alt_list(list_):
-#     list_ = list_.replace(', ', '","')
-#     list_ = list_.replace('[', '["')
-#     list_ = list_.replace(']', '"]')
-#     return list_
-
-
-# def to_1D(series):
-#     return pd.Series([x for _list in series for x in _list])
-
-
 def train1():
     print('Loading data...\n')
     liar_train = pd.read_csv(
-        './cleanDatasets/tokenized_liar_train.csv')
-    liar_train = shuffle(liar_train.reset_index(drop=True))
-    x_train = np.array(liar_train['statement'])
-    y_train = np.array(liar_train['label'])
+        './cleanDatasets/clean_liar_train.csv')
+    x_train, y_train = process1(liar_train)
+    print(x_train)
+    print(y_train)
+    # liar_train = shuffle(liar_train.reset_index(drop=True))
     print(x_train.shape)
     print(y_train.shape)
 
@@ -62,18 +52,28 @@ def train1():
 
     sequence_model.compile(loss=loss_function,
                            optimizer=optimizer, metrics=['accuracy'])
-    num_epochs = 1
+    num_epochs = 100
     history = sequence_model.fit(
         x_train, y_train, epochs=num_epochs, batch_size=batch_size, verbose=1)
 
+    # 1 - loss: 1.1556 - accuracy: 0.8879
 
-def main():
+
+def train2():
     print('Loading data...\n')
     liar_train = normalize(pd.read_csv(
         './cleanDatasets/clean_liar_train.csv'))
-    x_train, y_train = process(liar_train)
+    x_train, y_train = process2(liar_train)
+    print('\n')
+    for i in x_train[0]:
+        print(i)
+        print(type(i))
     print('x_train shape = ', x_train.shape)
     print('y_train shape = ', y_train.shape)
+
+
+def main():
+    train1()
 
 
 main()
