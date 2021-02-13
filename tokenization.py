@@ -21,6 +21,10 @@ subjectivity_encoder = LabelEncoder()
 maxl = 0
 
 
+def returnStatementTokenizer():
+    return statement_tokenizer
+
+
 def tokenize(tokenizer, data):
     tokenizer.fit_on_texts(data)
     sequences = tokenizer.texts_to_sequences(data)
@@ -87,11 +91,16 @@ def process2(data):
     swc = data['subjectiveWordsCount']
     subjectivity = encode(subjectivity_encoder, data['subjectivity'])
 
-    x_train = list(map(list, zip(statement, subject, speaker,
-                                 sjt, state, party, btc, fc, htc, mtc, potc, context, polarity, swc)))
-    x_train = np.array(x_train, dtype=object)
+    # xseq_train = list(map(list, zip(statement, subject)))
+    # xseq_train = np.array(xseq_train, dtype=object)
+    xseq_train = np.array(statement)
 
-    y_train = list(map(list, zip(label, subjectivity)))
-    y_train = np.array(y_train, dtype=object)
+    xint_train = list(map(list, zip(speaker,
+                                    sjt, state, party, btc, fc, htc, mtc, potc, context, polarity, swc)))
+    xint_train = np.array(xint_train, dtype=object)
 
-    return x_train, y_train
+    # y_train = list(map(list, zip(label, subjectivity)))
+    # y_train = np.array(y_train, dtype=object)
+    y_train = np.array(label)
+
+    return xseq_train, xint_train, y_train

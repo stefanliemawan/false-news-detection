@@ -38,21 +38,29 @@ def count(textList):
     return df_countvect
 
 
-def glove(textList):
+def glove(textList, embedding_dim):
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(textList.values)
+    word_index = tokenizer.word_index
     vocab_size = len(tokenizer.word_index) + 1
-    emb_dict = {}
+    emb_index = {}
     with open("./glove/glove.6B.100d.txt", 'r', encoding="utf-8") as f:
         for line in f:
             values = line.split()
             word = values[0]
             vector = np.asarray(values[1:], "float32")
-            emb_dict[word] = vector
-    print('Loaded %s word vectors.' % len(emb_dict))
+            emb_index[word] = vector
+    print('Loaded %s word vectors.' % len(emb_index))
+
+    # emb_matrix = np.zeros((vocab_size, embedding_dim))
+    # for word, i in word_index.items():
+    #     emb_vector = emb_index.get(word)
+    #     if emb_vector is not None:
+    #         # words not found in embedding index will be all-zeros.
+    #         emb_matrix[i] = emb_vector
 
     emb_matrix = pd.DataFrame(
-        data=emb_dict, columns=tokenizer.word_index.keys())
+        data=emb_index, columns=tokenizer.word_index.keys())
     print(emb_matrix)
     return emb_matrix
 
