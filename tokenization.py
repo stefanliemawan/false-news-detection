@@ -95,12 +95,51 @@ def process2(data):
     # xseq_train = np.array(xseq_train, dtype=object)
     xseq_train = np.array(statement)
 
-    xint_train = list(map(list, zip(speaker,
+    xnum_train = list(map(list, zip(speaker,
                                     sjt, state, party, btc, fc, htc, mtc, potc, context, polarity, swc)))
-    xint_train = np.array(xint_train, dtype=object)
+    xnum_train = np.array(xnum_train, dtype=object)
 
     # y_train = list(map(list, zip(label, subjectivity)))
     # y_train = np.array(y_train, dtype=object)
     y_train = np.array(label)
 
-    return xseq_train, xint_train, y_train
+    return xseq_train, xnum_train, y_train
+
+
+def process3(data):
+    statement = tokenize(
+        statement_tokenizer, data['statement'])
+    label = encode(label_encoder, data['label'])
+    subject = tokenize(subject_tokenizer, data['subject'])
+    speaker = encode(speaker_encoder, data['speaker'])
+    sjt = encode(sjt_encoder, data["speaker's job title"])
+    state = encode(state_encoder, data['state'])
+    party = encode(party_encoder, data['party'])
+    btc = np.array(data['barely true counts'])
+    fc = data['false counts']
+    htc = data['half true counts']
+    mtc = data['mostly true counts']
+    potc = data['pants on fire counts']
+    context = encode(context_encoder, data['context'])
+    polarity = data['polarity']  # minus value
+    swc = data['subjectiveWordsCount']
+    subjectivity = encode(subjectivity_encoder, data['subjectivity'])
+
+    # xseq_train = list(map(list, zip(statement, subject)))
+    # xseq_train = np.array(xseq_train, dtype=object)
+
+    statement = np.array(statement)
+    subject = np.array(subject)
+    x_train = list(map(list, zip(speaker,
+                                 sjt, state, party, btc, fc, htc, mtc, potc, context, swc)))
+    x_train = np.array(x_train, dtype=object)
+
+    x_train = np.concatenate((statement, subject, x_train), axis=1)
+
+    # y_train = list(map(list, zip(label, subjectivity)))
+    # y_train = np.array(y_train, dtype=object)
+    y_train = np.array(label)
+
+    return x_train, y_train
+
+# tidy up process function later
