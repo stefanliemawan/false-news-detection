@@ -14,7 +14,7 @@ from keras.optimizers import SGD
 # Mixed data neural network
 # http: // digital-thinking.de/deep-learning-combining-numerical-and-text-features-in-deep-neural-networks/
 
-vocab_size = 10375  # use maxlen?
+vocab_size = 11000  # use maxlen?
 # vocab_size = 13304  # use maxlen?
 embedding_dim = 100
 batch_size = 32
@@ -158,13 +158,23 @@ def createModel3(x_length, n_output):
 def train3():
     liar_train = normalize(pd.read_csv(
         './cleanDatasets/clean_liar_train.csv'))
+    liar_test = normalize(pd.read_csv('./cleanDatasets/clean_liar_test.csv'))
     # emb_matrix = glove(liar_train['statement'])
+    print('Processing Training Data...')
     x_train, y_train = process3(liar_train)
 
+    print('Processing Test Data...')
+    x_test, y_test = process3(liar_test)
+
+    # x_test = np.reshape(x_test, (-1, 77))
+
     x_train = np.asarray(x_train, dtype=np.float)
+    x_test = np.asarray(x_test, dtype=np.float)
 
     print('x_train shape =', x_train.shape)
     print('y_train shape =', y_train.shape)
+    print('x_test shape =', x_test.shape)
+    print('y_test shape =', y_test.shape)
 
     n_output = max(y_train)+1
 
@@ -173,12 +183,17 @@ def train3():
 
     model.compile(loss=loss_function,
                   optimizer=optimizer, metrics=['accuracy'])
-    num_epochs = 100
+    num_epochs = 1
     history = model.fit(
         x_train, y_train, epochs=num_epochs, batch_size=batch_size, verbose=1)
 
+    result = model.evaluate(x_test, y_test, verbose=1)
+    print(result)
+
     # loss: 1.0939 - accuracy: 0.9494 (no pre trained) 100 128 64 6
     # loss: 1.1126 - accuracy: 0.9310 (100d) 100 128 64 6
+
+    # try with multiple output? label & subjectivity
 
 
 def main():

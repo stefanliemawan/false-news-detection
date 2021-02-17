@@ -18,21 +18,35 @@ state_encoder = LabelEncoder()
 party_encoder = LabelEncoder()
 subjectivity_encoder = LabelEncoder()
 
-maxl = 0
+statement_maxl = 0
+subject_maxl = 0
 
 
 def returnStatementTokenizer():
     return statement_tokenizer
 
 
-def tokenize(tokenizer, data):
+def tokenize(tokenizer, data, col):
     tokenizer.fit_on_texts(data)
     sequences = tokenizer.texts_to_sequences(data)
     # wordIndex = tokenizer.word_index
     # print('Vocabulary size: ', len(wordIndex))
     maxlen = max([len(x) for x in sequences])
-    global maxl
-    maxl = maxlen
+
+    # to make sure x_train and y_train have the same columns, split function later
+    if col == 'statement':
+        global statement_maxl
+        if statement_maxl == 0:
+            statement_maxl = maxlen
+        else:
+            maxlen = statement_maxl
+    elif col == 'subject':
+        global subject_maxl
+        if subject_maxl == 0:
+            subject_maxl = maxlen
+        else:
+            maxlen = subject_maxl
+
     padSequences = pad_sequences(
         sequences, padding='post', truncating='post', maxlen=maxlen)
     # print('Shape of data tensor: ', padSequences.shape)
@@ -49,13 +63,13 @@ def encode(encoder, data):
     return encoded_y
 
 
-def pad(row):
-    print(row)
-    if len([row]) < maxl:
-        row = np.array([row])
-        row = np.pad(row, (0, maxl-len(row)), 'constant')
-    print(row)
-    return row
+# def pad(row):
+#     print(row)
+#     if len([row]) < maxl:
+#         row = np.array([row])
+#         row = np.pad(row, (0, maxl-len(row)), 'constant')
+#     print(row)
+#     return row
 
 
 def normalize(df):
@@ -107,10 +121,12 @@ def process2(data):
 
 
 def process3(data):
+    global statement_maxl, subject_maxl
+
     statement = tokenize(
-        statement_tokenizer, data['statement'])
+        statement_tokenizer, data['statement'], 'statement')
     label = encode(label_encoder, data['label'])
-    subject = tokenize(subject_tokenizer, data['subject'])
+    subject = tokenize(subject_tokenizer, data['subject'], 'subject')
     speaker = encode(speaker_encoder, data['speaker'])
     sjt = encode(sjt_encoder, data["speaker's job title"])
     state = encode(state_encoder, data['state'])
