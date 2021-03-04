@@ -2,4 +2,5 @@ datasets/
 cleanDatasets/
 glove/
 matrix/
+word2vec/
 __pycache__/

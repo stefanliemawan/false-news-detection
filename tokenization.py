@@ -4,6 +4,8 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from sklearn.preprocessing import LabelEncoder
+from sklearn.feature_extraction.text import TfidfVectorizer
+# from keras.utils.np_utils import to_categorical
 
 # Tokenize
 # https://medium.com/@sthacruz/fake-news-classification-using-glove-and-long-short-term-memory-lstm-a48f1dd605ab
@@ -23,13 +25,14 @@ subject_maxl = 0
 
 
 def returnStatementTokenizer():
+    global statement_tokenizer
     return statement_tokenizer
 
 
 def tokenize(tokenizer, data, col):
     tokenizer.fit_on_texts(data)
     sequences = tokenizer.texts_to_sequences(data)
-    # wordIndex = tokenizer.word_index
+    wordIndex = tokenizer.word_index
     # print('Vocabulary size: ', len(wordIndex))
     maxlen = max([len(x) for x in sequences])
 
@@ -49,56 +52,59 @@ def tokenize(tokenizer, data, col):
 
     padSequences = pad_sequences(
         sequences, padding='post', truncating='post', maxlen=maxlen)
-    # print('Shape of data tensor: ', padSequences.shape)
+    print('Shape of data tensor: ', padSequences.shape)
     return padSequences
 
 
-def encode(encoder, data):
+def encode(encoder, data, onehot):
     encoder.fit(data.astype(str))
     encoded_y = encoder.transform(data)
-    # for i in range(len(encoded_y)):
-    #     encoded_y[i] = pad(encoded_y[i])
-    #     break
-    # dummy_y = np_utils.to_categorical(encoded_y)
-    return encoded_y
+    if onehot == True:
+        dummy_y = tf.keras.utils.to_categorical(encoded_y)
+        return dummy_y
+    else:
+        return encoded_y
 
 
-# def pad(row):
-#     print(row)
-#     if len([row]) < maxl:
-#         row = np.array([row])
-#         row = np.pad(row, (0, maxl-len(row)), 'constant')
-#     print(row)
-#     return row
+def tfidf(text):
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit(text)
+    # print(vectorizer.vocabulary_)
+    # print(vectorizer.idf_)
+    vector = vectorizer.transform(text[0]).toarray()
 
 
-def normalize(df):
-    df.replace('', np.nan, inplace=True)
-    df.dropna(inplace=True)
+def handleNaN(df):
+    # find a way not to drop rows with nan
+    for header in df.columns.values:
+        df[header] = df[header].fillna(
+            df[header][df[header].first_valid_index()])
+    # df = df.interpolate(method='linear', limit_direction='forward', axis=0)
     return df
 
 
 def process(data):
     # find a cleaner way to do this, use df apply encoder
+    # tfidf?
     global statement_maxl, subject_maxl
 
     statement = tokenize(
         statement_tokenizer, data['statement'], 'statement')
-    label = encode(label_encoder, data['label'])
-    subject = tokenize(subject_tokenizer, data['subject'], 'subject')
-    speaker = encode(speaker_encoder, data['speaker'])
-    sjt = encode(sjt_encoder, data["speaker's job title"])
-    state = encode(state_encoder, data['state'])
-    party = encode(party_encoder, data['party'])
-    btc = np.array(data['barely true counts'])
-    fc = data['false counts']
-    htc = data['half true counts']
-    mtc = data['mostly true counts']
-    potc = data['pants on fire counts']
-    context = encode(context_encoder, data['context'])
+    label = encode(label_encoder, data['label'], True)
+    # subject = tokenize(subject_tokenizer, data['subject'], 'subject')
+    speaker = encode(speaker_encoder, data['speaker'], False)
+    sjt = encode(sjt_encoder, data["speaker's job title"], False)
+    state = encode(state_encoder, data['state'], False)
+    party = encode(party_encoder, data['party'], False)
+    # btc = data['barely true counts']
+    # fc = data['false counts']
+    # htc = data['half true counts']
+    # mtc = data['mostly true counts']
+    # potc = data['pants on fire counts']
+    # context = encode(context_encoder, data['context'], False)
     # polarity = data['polarity']  # minus value
     swc = data['subjectiveWordsCount']
-    subjectivity = encode(subjectivity_encoder, data['subjectivity'])
+    subjectivity = encode(subjectivity_encoder, data['subjectivity'], True)
 
     # x_train1 = list(map(list, zip(statement, subject)))
     # x_train1 = np.array(x_train1, dtype=object)
@@ -106,7 +112,7 @@ def process(data):
     # cant convert to asarray if nested array
 
     x_train2 = list(map(list, zip(speaker,
-                                  sjt, state, party, btc, fc, htc, mtc, potc, context, swc)))
+                                  sjt, state, party, swc)))
     x_train2 = np.array(x_train2, dtype=object)
 
     y_train1 = np.array(label)
