@@ -24,8 +24,8 @@ def cleanDataText(data, textHeader):
     # make all lower case and apply for more than statement
     data[textHeader] = data[textHeader].str.lower()
     data[textHeader] = data[textHeader].apply(punctuationRemoval)
-    # data[textHeader] = data[textHeader].apply(lambda x: ' '.join(
-    #     [word for word in x.split() if word not in (stop)]))
+    data[textHeader] = data[textHeader].apply(lambda x: ' '.join(
+        [word for word in x.split() if word not in (stop)]))
     return data
 
 

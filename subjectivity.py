@@ -6,19 +6,18 @@ from textblob import TextBlob
 
 
 def getSubjectiveWordsCount(row):
-    # taggedText = nltk.pos_tag(nltk.word_tokenize(row.statement))
-    taggedText = nltk.pos_tag(nltk.word_tokenize(row.text))
+    taggedText = nltk.pos_tag(nltk.word_tokenize(row.statement))
+    # taggedText = nltk.pos_tag(nltk.word_tokenize(row.text))
     adwordsCount = 0
     for tag in taggedText:
         if (tag[1][0] == 'J') or (tag[1][0] == 'R'):
             adwordsCount += 1
-    print('haha')
     return adwordsCount
 
 
 def getSubjectivity(row):
-    # subjectivity = TextBlob(row.statement).sentiment.subjectivity
-    subjectivity = TextBlob(row.text).sentiment.subjectivity
+    subjectivity = TextBlob(row.statement).sentiment.subjectivity
+    # subjectivity = TextBlob(row.text).sentiment.subjectivity
     if (subjectivity <= 0.3):
         return 'low'
     elif (subjectivity >= 0.7):
@@ -77,8 +76,8 @@ def liar():
 
 
 def main():
-    fakeTrue()
-    # liar()
+    # fakeTrue()
+    liar()
 
 
 main()
