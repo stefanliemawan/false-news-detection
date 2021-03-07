@@ -16,8 +16,8 @@ def getSubjectiveWordsCount(row):
 
 
 def getSubjectivity(row):
-    subjectivity = TextBlob(row.statement).sentiment.subjectivity
-    # subjectivity = TextBlob(row.text).sentiment.subjectivity
+    subjectivity = round(TextBlob(row.statement).sentiment.subjectivity, 1)
+    # subjectivity = round(TextBlob(row.text).sentiment.subjectivity,1)
     if (subjectivity <= 0.3):
         return 'low'
     elif (subjectivity >= 0.7):

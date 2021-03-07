@@ -69,31 +69,21 @@ def encode(encoder, data, onehot):
 
 
 def tfidf(texts):
-    vectorizer = TfidfVectorizer(max_features=300)
+    vectorizer = TfidfVectorizer(max_features=1200)
     vectorizer = vectorizer.fit(texts)
     tfidf = vectorizer.transform(texts).toarray()
     return tfidf
 
 
-def handleNaN(df):
-    # find a way not to drop rows with nan
-    for header in df.columns.values:
-        df[header] = df[header].fillna(
-            df[header][df[header].first_valid_index()])
-    # df = df.interpolate(method='linear', limit_direction='forward', axis=0)
-    return df
-
-
-def glove(texts):
+def gloveMatrix(texts):
     global statement_tokenizer
-    tokenizer = statement_tokenizer
-    tokenizer.fit_on_texts(texts.values)
-    word_index = tokenizer.word_index
-    vocab_size = len(tokenizer.word_index) + 1
+    statement_tokenizer.fit_on_texts(statements)
+    word_index = statement_tokenizer.word_index
+    vocab_size = len(statement_tokenizer.word_index) + 1
     print('Vocabulary Size = ', vocab_size)
 
     emb_index = {}
-    with open("./glove/glove.6B.300d.txt", 'r', encoding="utf-8") as f:
+    with open("./glove/glove.42B.300d.txt", 'r', encoding="utf-8") as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -118,7 +108,12 @@ def glove(texts):
     return emb_matrix
 
 
-def word2vec(statements):
+def word2vecMatrix(statements):
+    global statement_tokenizer
+    statement_tokenizer.fit_on_texts(statements)
+    word_index = statement_tokenizer.word_index
+    vocab_size = len(statement_tokenizer.word_index) + 1
+    print('Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
         './word2vec/GoogleNews-vectors-negative300.bin', limit=1000000, binary=True)
 
@@ -126,9 +121,34 @@ def word2vec(statements):
     maxlen = max([len(x) for x in sentences])
     x1 = []
 
+    emb_matrix = np.zeros((vocab_size, 300))
+
     hits = 0
     misses = 0
+    for word, i in word_index.items():
+        try:
+            emb_matrix[i] = w2v[word]
+            hits += 1
+        except:
+            misses += 1
+    print("Word2vec Converted %d words (%d misses)" % (hits, misses))
+
+    return emb_matrix
+
+
+def word2vecInput(statements):
+    w2v = gensim.models.KeyedVectors.load_word2vec_format(
+        './word2vec/GoogleNews-vectors-negative300.bin', limit=1000000, binary=True)
+    # 1m - 12683 misses
+    # 3m words
+
+    sentences = [sentence.split() for sentence in statements]
+    maxlen = max([len(x) for x in sentences])
     wnf = [0 for x in range(300)]
+    x1 = []
+
+    hits = 0
+    misses = 0
     for sentence in sentences:
         s = []
         for word in sentence:
@@ -149,7 +169,7 @@ def word2vec(statements):
 
 
 def process(data):
-    global statement_maxl, subject_maxl
+    global statement_tokenizer, statement_maxl, subject_maxl
 
     statement = tokenize(
         statement_tokenizer, data['statement'], 'statement')
@@ -159,20 +179,22 @@ def process(data):
     sjt = encode(sjt_encoder, data["speaker's job title"], False)
     state = encode(state_encoder, data['state'], False)
     party = encode(party_encoder, data['party'], False)
-    # btc = data['barely true counts']
-    # fc = data['false counts']
-    # htc = data['half true counts']
-    # mtc = data['mostly true counts']
-    # potc = data['pants on fire counts']
+    btc = data['barely true counts']
+    fc = data['false counts']
+    htc = data['half true counts']
+    mtc = data['mostly true counts']
+    potc = data['pants on fire counts']
     # context = encode(context_encoder, data['context'], False)
     # polarity = data['polarity']  # minus value
     swc = data['subjectiveWordsCount']
     subjectivity = encode(subjectivity_encoder, data['subjectivity'], True)
 
-    x1 = word2vec(data['statement'])
+    # x1 = word2vecInput(data['statement'])
     # x1 = np.asarray(statement)
+    x1 = tfidf(data['statement'])
 
-    x2 = list(map(list, zip(speaker, sjt, state, party, swc)))
+    x2 = list(map(list, zip(speaker, sjt, state,
+                            party, btc, fc, htc, mtc, potc, swc)))
     x2 = np.asarray(x2)
 
     y1 = np.asarray(label)

@@ -16,58 +16,56 @@ def punctuationRemoval(text):
     clean_str = ''.join(all_list)
     return clean_str
 
-# punctuationRemoval and cleanDataText might not be needed cause scikit learn has stop words(?)
-# CountVectorizer?
+
+def simplifyLabel(df):
+    df.loc[df.label == "mostly-true", "label"] = "MOSTLY-TRUE"
+    df.loc[df.label == "half-true", "label"] = "HALF-TRUE"
+    df.loc[df.label == "barely-true", "label"] = "BARELY-TRUE"
+    df.loc[df.label == "pants-fire", "label"] = "FALSE"
+    return df
 
 
-def cleanDataText(data, textHeader):
+def handleNaN(df):
+    for header in df.columns.values:
+        df[header] = df[header].fillna(
+            df[header][df[header].first_valid_index()])
+    # df = df.interpolate(method='linear', limit_direction='forward', axis=0)
+    return df
+
+
+def renameLiarColumn(df):
+    df.rename(columns={'barely true counts': 'barelyTrueCounts',
+                       'false counts': 'falseCounts', 'half true counts': 'halfTrueCounts', 'mostly true counts': 'mostlyTrueCounts', 'pants on fire counts': 'pantsOnFireCounts'})
+    return df
+
+
+def cleanDataText(df, textHeader):
     # make all lower case and apply for more than statement
-    data[textHeader] = data[textHeader].str.lower()
-    data[textHeader] = data[textHeader].apply(punctuationRemoval)
-    data[textHeader] = data[textHeader].apply(lambda x: ' '.join(
+    df[textHeader] = df[textHeader].str.lower()
+    df[textHeader] = df[textHeader].apply(punctuationRemoval)
+    df[textHeader] = df[textHeader].apply(lambda x: ' '.join(
         [word for word in x.split() if word not in (stop)]))
-    return data
-
-
-def initFakeTrueData():
-    fake = pd.read_csv('./datasets/FakeTrue/Fake.csv')
-    true = pd.read_csv('./datasets/FakeTrue/True.csv')
-    fake['label'] = 'fake'
-    true['label'] = 'true'
-    data = pd.concat([fake, true]).reset_index(drop=True)
-    data = shuffle(data)
-    data = data.reset_index(drop=True)
-    cleanData = cleanDataText(
-        data, 'title')
-    cleanData = cleanDataText(
-        data, 'text')
-    cleanData.to_csv('./cleanDatasets/clean_fake_true.csv',
-                     encoding='utf-8-sig')
-
-
-def renameLiarColumn(dataframe):
-    dataframe.rename(columns={'barely true counts': 'barelyTrueCounts',
-                              'false counts': 'falseCounts', 'half true counts': 'halfTrueCounts', 'mostly true counts': 'mostlyTrueCounts', 'pants on fire counts': 'pantsOnFireCounts'})
-    return dataframe
+    df = simplifyLabel(df)
+    df = handleNaN(df)
+    return df
 
 
 def initLiarData():
-    liar_train = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_train_labeled.csv')
-                                       ).reset_index(drop=True), 'statement')
+    liar_train = cleanDataText(pd.read_csv(
+        './datasets/LIAR/liar_train_labeled.csv').reset_index(drop=True), 'statement')
     liar_train.to_csv('./cleanDatasets/clean_liar_train.csv',
                       encoding='utf-8-sig', index=False)
-    liar_test = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_test_labeled.csv')
-                                      ).reset_index(drop=True), 'statement')
+    liar_test = cleanDataText(pd.read_csv(
+        './datasets/LIAR/liar_test_labeled.csv').reset_index(drop=True), 'statement')
     liar_test.to_csv('./cleanDatasets/clean_liar_test.csv',
                      encoding='utf-8-sig', index=False)
-    liar_valid = cleanDataText(shuffle(pd.read_csv('./datasets/LIAR/liar_valid_labeled.csv')
-                                       ).reset_index(drop=True), 'statement')
+    liar_valid = cleanDataText(pd.read_csv(
+        './datasets/LIAR/liar_valid_labeled.csv').reset_index(drop=True), 'statement')
     liar_valid.to_csv('./cleanDatasets/clean_liar_valid.csv',
                       encoding='utf-8-sig', index=False)
 
 
 def main():
-    # initFakeTrueData()
     initLiarData()
 
 
