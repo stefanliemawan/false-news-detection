@@ -18,6 +18,10 @@ def punctuationRemoval(text):
 
 
 def simplifyLabel(df):
+    # df.loc[df.label == "mostly-true", "label"] = "TRUE"
+    # df.loc[df.label == "half-true", "label"] = "HALF-TRUE"
+    # df.loc[df.label == "barely-true", "label"] = "HALF-TRUE"
+    # df.loc[df.label == "pants-fire", "label"] = "FALSE"
     df.loc[df.label == "mostly-true", "label"] = "MOSTLY-TRUE"
     df.loc[df.label == "half-true", "label"] = "HALF-TRUE"
     df.loc[df.label == "barely-true", "label"] = "BARELY-TRUE"

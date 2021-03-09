@@ -18,28 +18,23 @@ def getSubjectiveWordsCount(row):
 def getSubjectivity(row):
     subjectivity = round(TextBlob(row.statement).sentiment.subjectivity, 1)
     # subjectivity = round(TextBlob(row.text).sentiment.subjectivity,1)
-    if (subjectivity <= 0.3):
-        return 'low'
-    elif (subjectivity >= 0.7):
-        return 'high'
-    else:
-        return 'medium'
+    if (subjectivity <= 0.2):
+        return 'VERY-LOW'
+    elif (subjectivity > 0.2) and (subjectivity <= 0.4):
+        return 'LOW'
+    elif (subjectivity > 0.4) and (subjectivity <= 0.6):
+        return 'MEDIUM'
+    elif (subjectivity > 0.6) and (subjectivity <= 0.8):
+        return 'HIGH'
+    elif (subjectivity > 0.8):
+        return 'VERY-HIGH'
 
 
 def getPolarity(row):
-    return TextBlob(row.statement).sentiment.polarity
-
-
-def fakeTrue():
-    # apply not working
-    # TypeError: expected string or bytes-like object
-    ftPath = 'cleanDatasets/clean_fake_true.csv'
-    ft = pd.read_csv(ftPath)
-
-    ft['subjectiveWordsCount'] = ft.apply(getSubjectiveWordsCount, axis=1)
-    ft['subjectivity'] = ft.apply(getSubjectivity, axis=1)
-
-    ft.to_csv(ftPath, encoding='utf-8-sig', index=False)
+    polarity = TextBlob(row.statement).sentiment.polarity
+    # if polarity < 0:
+    #     polarity = 0
+    return polarity
 
 
 def liar():
@@ -76,7 +71,6 @@ def liar():
 
 
 def main():
-    # fakeTrue()
     liar()
 
 
