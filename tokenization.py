@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+import gensim
+import calendar
+import os
+import sys
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-import gensim
 from gensim.models.word2vec import Word2Vec
 
 # Tokenize
@@ -20,6 +22,7 @@ speaker_encoder = LabelEncoder()
 sjt_encoder = LabelEncoder()
 state_encoder = LabelEncoder()
 party_encoder = LabelEncoder()
+checker_encoder = LabelEncoder()
 
 label_encoder = LabelEncoder()
 subjectivity_encoder = LabelEncoder()
@@ -54,6 +57,16 @@ def tokenizeSubject(tokenizer, data):
     return np.array(padSequences)
 
 
+def encode(encoder, data, onehot):
+    encoder.fit(data.astype(str))
+    encoded_y = encoder.transform(data)
+    if onehot == True:
+        dummy_y = tf.keras.utils.to_categorical(encoded_y)
+        return np.array(dummy_y)
+    else:
+        return np.array(encoded_y)
+
+
 def handleContext(data):
     vectorizer = TfidfVectorizer()
     tfidf = vectorizer.fit_transform(data)
@@ -63,14 +76,17 @@ def handleContext(data):
     return np.array(encoded_context)
 
 
-def encode(encoder, data, onehot):
-    encoder.fit(data.astype(str))
-    encoded_y = encoder.transform(data)
-    if onehot == True:
-        dummy_y = tf.keras.utils.to_categorical(encoded_y)
-        return np.array(dummy_y)
-    else:
-        return np.array(encoded_y)
+def handleDate(data):
+    date = [d.split() for d in data]
+    res = []
+    m = {month: index for index, month in enumerate(
+        calendar.month_abbr) if month}
+    for d in date:
+        day = int(d[1][:-1])
+        month = int(m[d[0][:3]])
+        year = int(d[2][:4])
+        res.append([day, month, year])
+    return np.array(res)
 
 
 def tfidf(texts):
@@ -120,11 +136,12 @@ def word2vecMatrix(statements):
     vocab_size = len(statement_tokenizer.word_index) + 1
     print('Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', limit=100000, binary=True)
+        './word2vec/GoogleNews-vectors-negative300.bin', limit=100, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
     maxlen = max([len(x) for x in sentences])
+    print(np.mean([len(x) for x in sentences]))
     x1 = []
 
     emb_matrix = np.zeros((vocab_size, 300))
@@ -174,7 +191,7 @@ def word2vecInput(statements):
     return x1
 
 
-def process(data):
+def processLiar(data):
     statement = tokenizeStatement(
         statement_tokenizer, data['statement'],)
     subject = tokenizeSubject(subject_tokenizer, data['subject'])
@@ -216,4 +233,26 @@ def process(data):
 
     return x1, x2, y1, y2
 
-# tidy up process function later
+
+def processPoliti(data):
+    statement = tokenizeStatement(
+        statement_tokenizer, data['statement'],)
+
+    speaker = encode(speaker_encoder, data['speaker'], False)
+    # checker = encode(checker_encoder, data['checker'], False)
+    # date = handleDate(data['date'])
+    swc = data['subjectiveWordsCount']
+    # polarity = data['polarity']
+    label = encode(label_encoder, data['label'], True)
+    subjectivity = encode(subjectivity_encoder, data['subjectivity'], True)
+
+    x1 = statement
+
+    x2 = np.array(
+        list(map(list, zip(speaker, swc))))
+    # x2 = np.concatenate((date, x2), axis=1)
+
+    y1 = label
+    y2 = subjectivity
+
+    return x1, x2, y1, y2

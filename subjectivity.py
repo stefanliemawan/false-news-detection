@@ -18,16 +18,22 @@ def getSubjectiveWordsCount(row):
 def getSubjectivity(row):
     subjectivity = round(TextBlob(row.statement).sentiment.subjectivity, 1)
     # subjectivity = round(TextBlob(row.text).sentiment.subjectivity,1)
-    if (subjectivity <= 0.2):
-        return 'VERY-LOW'
-    elif (subjectivity > 0.2) and (subjectivity <= 0.4):
+    # if (subjectivity <= 0.2):
+    #     return 'VERY-LOW'
+    # elif (subjectivity > 0.2) and (subjectivity <= 0.4):
+    #     return 'LOW'
+    # elif (subjectivity > 0.4) and (subjectivity <= 0.6):
+    #     return 'MEDIUM'
+    # elif (subjectivity > 0.6) and (subjectivity <= 0.8):
+    #     return 'HIGH'
+    # elif (subjectivity > 0.8):
+    #     return 'VERY-HIGH'
+    if (subjectivity <= 0.3):
         return 'LOW'
-    elif (subjectivity > 0.4) and (subjectivity <= 0.6):
+    elif (subjectivity > 0.3) and (subjectivity <= 0.7):
         return 'MEDIUM'
-    elif (subjectivity > 0.6) and (subjectivity <= 0.8):
+    elif (subjectivity > 0.7):
         return 'HIGH'
-    elif (subjectivity > 0.8):
-        return 'VERY-HIGH'
 
 
 def getPolarity(row):
@@ -37,41 +43,32 @@ def getPolarity(row):
     return polarity
 
 
+def applyToDF(df):
+    df['polarity'] = df.apply(getPolarity, axis=1)
+    df['subjectiveWordsCount'] = df.apply(getSubjectiveWordsCount, axis=1)
+    df['subjectivity'] = df.apply(
+        getSubjectivity, axis=1)
+    return df
+
+
 def liar():
-    liarTrainPath = 'cleanDatasets/clean_liar_train.csv'
-    liarTestPath = 'cleanDatasets/clean_liar_test.csv'
-    liarValidPath = 'cleanDatasets/clean_liar_valid.csv'
+    liar_train_path = 'cleanDatasets/clean_liar_train.csv'
+    liar_test_path = 'cleanDatasets/clean_liar_test.csv'
+    liar_valid_path = 'cleanDatasets/clean_liar_valid.csv'
 
-    liarTrainData = pd.read_csv(liarTrainPath)
-    liarTestData = pd.read_csv(liarTestPath)
-    liarValidData = pd.read_csv(liarValidPath)
+    liar_train = pd.read_csv(liar_train_path)
+    liar_test = pd.read_csv(liar_test_path)
+    liar_valid = pd.read_csv(liar_valid_path)
 
-    liarTrainData['polarity'] = liarTrainData.apply(
-        getPolarity, axis=1)
-    liarTrainData['subjectiveWordsCount'] = liarTrainData.apply(
-        getSubjectiveWordsCount, axis=1)
-    liarTrainData['subjectivity'] = liarTrainData.apply(
-        getSubjectivity, axis=1)
+    # Can be put into a function with params data
 
-    liarTestData['polarity'] = liarTestData.apply(getPolarity, axis=1)
-    liarTestData['subjectiveWordsCount'] = liarTestData.apply(
-        getSubjectiveWordsCount, axis=1)
-    liarTestData['subjectivity'] = liarTestData.apply(getSubjectivity, axis=1)
-
-    liarValidData['polarity'] = liarValidData.apply(
-        getPolarity, axis=1)
-    liarValidData['subjectiveWordsCount'] = liarValidData.apply(
-        getSubjectiveWordsCount, axis=1)
-    liarValidData['subjectivity'] = liarValidData.apply(
-        getSubjectivity, axis=1)
-
-    liarTrainData.to_csv(liarTrainPath, encoding='utf-8-sig', index=False)
-    liarTestData.to_csv(liarTestPath, encoding='utf-8-sig', index=False)
-    liarValidData.to_csv(liarValidPath, encoding='utf-8-sig', index=False)
+    liar_train.to_csv(liar_train_path, encoding='utf-8-sig', index=False)
+    liar_test.to_csv(liar_test_path, encoding='utf-8-sig', index=False)
+    liar_valid.to_csv(liar_valid_path, encoding='utf-8-sig', index=False)
 
 
-def main():
-    liar()
-
-
-main()
+def politifact():
+    path = 'cleanDatasets/clean_politifact.csv'
+    data = pd.read_csv(path)
+    data = applyToDF(data)
+    data.to_csv(path, index=False)
