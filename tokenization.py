@@ -136,7 +136,7 @@ def word2vecMatrix(statements):
     vocab_size = len(statement_tokenizer.word_index) + 1
     print('Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', limit=100000, binary=True)
+        './word2vec/GoogleNews-vectors-negative300.bin', limit=20000, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]

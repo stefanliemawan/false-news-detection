@@ -19,7 +19,7 @@ from sklearn.model_selection import KFold
 optimizer = tf.keras.optimizers.RMSprop()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-batch_size = 32
+batch_size = 64
 
 
 def plot(history):
@@ -50,7 +50,7 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
 
     x1, x2, y1, y2 = processFunction(data)
 
-    # x2 = normalize(x2)
+    x2 = normalize(x2)
 
     n_output1 = y1.shape[1]
     n_output2 = y2.shape[1]

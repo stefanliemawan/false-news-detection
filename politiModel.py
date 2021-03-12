@@ -33,8 +33,8 @@ loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
 
     x1 = Input(shape=(x1_shape[1], ), name="input_1")
-    emb1_1 = Embedding(emb_matrix.shape[0], emb_matrix.shape[1], weights=[
-                       emb_matrix], trainable=True, name="embedding_1_1")(x1)
+    emb1_1 = Embedding(
+        emb_matrix.shape[0], emb_matrix.shape[1], trainable=True, name="embedding_1_1")(x1)
     cnn1_1 = Conv1D(128, 5,
                     activation="relu", padding="same", name="conv1d_1_1")(emb1_1)
     mp1_1 = MaxPooling1D(2, name="max_pooling1D_1_1")(cnn1_1)
@@ -42,11 +42,11 @@ def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
 
     x2 = Input(shape=(x2_shape[1], ), name="input_2")
     emb2_1 = Embedding(
-        emb_matrix.shape[0], 5, trainable=True, name="embedding_2_1")(x2)
+        emb_matrix.shape[0], 2, trainable=True, name="embedding_2_1")(x2)
     cnn2_1 = Conv1D(64, 3, padding="same",
                     activation="relu", name="conv1d_2_1")(emb2_1)
     mp2_1 = MaxPooling1D(2, name="max_pooling1D_2_1")(cnn2_1)
-    lstm_2_1 = LSTM(32, name="lstm_2_1")(mp2_1)
+    lstm_2_1 = LSTM(128, name="lstm_2_1")(mp2_1)
 
     x = concatenate([flat1_1, lstm_2_1])
     x = Dense(128, activation="relu")(x)
@@ -66,7 +66,7 @@ def main():
     data = pd.concat([liar, politi], ignore_index=True)
     print("Full Data Shape = ", data.shape)
     print(data['label'].value_counts())
-    num_epoch = 10
+    num_epoch = 12
     train(data, processPoliti, politiModel, word2vecMatrix, num_epoch)
     # 0.65 val accuracy, 0.9 training accuracy
     # stop learning after around 10 epoch
