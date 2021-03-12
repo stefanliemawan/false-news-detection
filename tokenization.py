@@ -136,12 +136,11 @@ def word2vecMatrix(statements):
     vocab_size = len(statement_tokenizer.word_index) + 1
     print('Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', limit=100, binary=True)
+        './word2vec/GoogleNews-vectors-negative300.bin', limit=100000, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
     maxlen = max([len(x) for x in sentences])
-    print(np.mean([len(x) for x in sentences]))
     x1 = []
 
     emb_matrix = np.zeros((vocab_size, 300))

@@ -25,8 +25,15 @@ def simplifyLabel(df):
     df.loc[df.label == "half-true", "label"] = "HALF-TRUE"
     df.loc[df.label == "barely-true", "label"] = "BARELY-TRUE"
     df.loc[df.label == "pants-fire", "label"] = "PANTS-FIRE"
-    # df.loc[df.label == "pants-fire", "label"] = "FALSE"
     df.loc[df.label == "false", "label"] = "FALSE"
+    df.loc[df.label == "true", "label"] = "TRUE"
+
+    # df.loc[df.label == "true", "label"] = "TRUE"
+    # df.loc[df.label == "mostly-true", "label"] = "TRUE"
+    # df.loc[df.label == "half-true", "label"] = "HALF-TRUE"
+    # df.loc[df.label == "barely-true", "label"] = "HALF-TRUE"
+    # df.loc[df.label == "pants-fire", "label"] = "FALSE"
+    # df.loc[df.label == "false", "label"] = "FALSE"
     return df
 
 
