@@ -19,7 +19,7 @@ from sklearn.model_selection import KFold
 optimizer = tf.keras.optimizers.RMSprop()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-batch_size = 64
+batch_size = 256
 
 
 def plot(history):
@@ -88,7 +88,7 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     history = model.fit(
         [x_train1, x_train2], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2], [y_val1, y_val2]), batch_size=batch_size, verbose=1)
 
-    # kf = KFold(n_splits=10, shuffle=True)
+    # kf = KFold(n_splits=5, shuffle=True)
     # k_fold = 1
 
     # for train_index, test_index in kf.split(x_train1):
@@ -111,4 +111,4 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     print("### EVALUATION ###")
     model.evaluate([x_test1, x_test2], [y_test1, y_test2], verbose=1)
     model.evaluate([x_val1, x_val2], [y_val1, y_val2], verbose=1)
-    plot(history)
+    # plot(history)
