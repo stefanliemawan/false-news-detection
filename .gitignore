@@ -3,4 +3,6 @@ cleanDatasets/
 glove/
 matrix/
 word2vec/
+prediction/
+models/
 __pycache__/

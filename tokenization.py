@@ -5,6 +5,7 @@ import gensim
 import calendar
 import os
 import sys
+import json
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from sklearn.preprocessing import LabelEncoder
@@ -25,7 +26,7 @@ party_encoder = LabelEncoder()
 checker_encoder = LabelEncoder()
 
 label_encoder = LabelEncoder()
-subjectivity_encoder = LabelEncoder()
+subj_encoder = LabelEncoder()
 
 
 def tokenizeStatement(tokenizer, data):
@@ -136,7 +137,7 @@ def word2vecMatrix(statements):
     vocab_size = len(statement_tokenizer.word_index) + 1
     print('Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
+        './word2vec/GoogleNews-vectors-negative300.bin', binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
@@ -209,7 +210,7 @@ def processLiar(data):
     # polarity = data['polarity']
 
     label = encode(label_encoder, data['label'], True)
-    subjectivity = encode(subjectivity_encoder, data['subjectivity'], True)
+    subjectivity = encode(subj_encoder, data['subjectivity'], True)
 
     # x1 = word2vecInput(data['statement'])
     # x1 = tfidf(data['statement'])
@@ -243,7 +244,22 @@ def processPoliti(data):
     swc = data['subjectiveWordsCount']
     # polarity = data['polarity']
     label = encode(label_encoder, data['label'], True)
-    subjectivity = encode(subjectivity_encoder, data['subjectivity'], True)
+    subjectivity = encode(subj_encoder, data['subjectivity'], True)
+
+    label_dict = dict(zip(label_encoder.classes_,
+                          label_encoder.transform(label_encoder.classes_)))
+    label_dict = {str(v): k for k, v in label_dict.items()}
+    subj_dict = dict(zip(subj_encoder.classes_,
+                         subj_encoder.transform(subj_encoder.classes_)))
+    subj_dict = {str(v): k for k, v in subj_dict.items()}
+
+    print(label_dict)
+    print(subj_dict)
+
+    with open('label_mapping.json', 'w') as f:
+        json.dump(label_dict, f)
+    with open('subj_mapping.json', 'w') as f:
+        json.dump(subj_dict, f)
 
     x1 = statement
 

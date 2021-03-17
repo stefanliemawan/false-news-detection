@@ -26,10 +26,11 @@ from train import train
 
 def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
     # OPTIMIZE, play with filter & kernel sizes, units, batch sizes, emb_matrix
+    vocab_size = 19129
     d_scale = 0.25
     x1 = Input(shape=(x1_shape[1], ), name="input_1")
     emb1_1 = Embedding(
-        emb_matrix.shape[0], emb_matrix.shape[1], trainable=True, name="embedding_1_1")(x1)
+        100000, emb_matrix.shape[1], trainable=True, name="embedding_1_1")(x1)
     drop1_1 = Dropout(d_scale, name="dropout_1_1")(emb1_1)
     cnn1_1 = Conv1D(128, 5,
                     activation="relu", padding="same", name="conv1d_1_1")(drop1_1)
@@ -38,7 +39,7 @@ def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
 
     x2 = Input(shape=(x2_shape[1], ), name="input_2")
     emb2_1 = Embedding(
-        emb_matrix.shape[0], 2, trainable=True, name="embedding_2_1")(x2)
+        100000, 2, trainable=True, name="embedding_2_1")(x2)
     drop2_1 = Dropout(d_scale, name="dropout_2_1")(emb2_1)
     cnn2_1 = Conv1D(64, 3, padding="same",
                     activation="relu", name="conv1d_2_1")(drop2_1)
@@ -62,7 +63,7 @@ def main():
     data = pd.read_csv('./cleanDatasets/merged_politifact.csv')
     print("Full Data Shape = ", data.shape)
     print(data['label'].value_counts())
-    num_epoch = 50
+    num_epoch = 20
     train(data, processPoliti, politiModel, word2vecMatrix, num_epoch)
     # 0.65 val accuracy, 0.9 training accuracy
     # stop learning after around 10 epoch
