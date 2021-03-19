@@ -58,7 +58,7 @@ def cleanDataText(df, textHeader):
     df[textHeader] = df[textHeader].apply(lambda x: ' '.join(
         [word for word in x.split() if word not in (stop)]))
     df[textHeader] = df[textHeader].map(lambda x: re.sub(r'\W+', ' ', x))
-    df = simplifyLabel(df)
+    # df = simplifyLabel(df)
     df = handleNaN(df)
     return df
 
@@ -92,9 +92,39 @@ def initPolitifact():
     data.to_csv('./cleanDatasets/clean_politifact.csv', index=False)
 
 
+def initFakeTrue():
+    print()
+
+
+def initFakeNewsNet():
+    politi_fake = cleanDataText(pd.read_csv(
+        './datasets/FakeNewsNet/politifact_fake.csv').reset_index(drop=True), 'title')
+    politi_real = cleanDataText(pd.read_csv(
+        './datasets/FakeNewsNet/politifact_real.csv').reset_index(drop=True), 'title')
+    gossip_fake = cleanDataText(pd.read_csv(
+        './datasets/FakeNewsNet/gossipcop_fake.csv').reset_index(drop=True), 'title')
+    gossip_real = cleanDataText(pd.read_csv(
+        './datasets/FakeNewsNet/gossipcop_real.csv').reset_index(drop=True), 'title')
+
+    politi_real['label'] = "TRUE"
+    politi_fake['label'] = "FALSE"
+    gossip_real['label'] = "TRUE"
+    gossip_fake['label'] = "FALSE"
+
+    politi = pd.concat([politi_real, politi_fake], ignore_index=True)
+    gossip = pd.concat([gossip_real, gossip_fake], ignore_index=True)
+
+    print(politi)
+    print(gossip)
+
+    politi.to_csv('./cleanDatasets/FNN_politifact.csv', index=False)
+    gossip.to_csv('./cleanDatasets/FNN_gossip.csv', index=False)
+
+
 def main():
-    initLiarData()
-    initPolitifact()
+    # initLiarData()
+    # initPolitifact()
+    initFakeNewsNet()
 
 
 main()

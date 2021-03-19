@@ -105,7 +105,7 @@ def gloveMatrix(statements):
     print('Vocabulary Size = ', vocab_size)
 
     emb_index = {}
-    with open("./glove/glove.6B.300d.txt", 'r', encoding="utf-8") as f:
+    with open("./glove/glove.twitter.27B.200d.txt", 'r', encoding="utf-8") as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -113,7 +113,7 @@ def gloveMatrix(statements):
             emb_index[word] = vector
     print('Loaded %s word vectors.' % len(emb_index))
 
-    emb_matrix = np.zeros((vocab_size, 300))
+    emb_matrix = np.zeros((vocab_size, 200))
 
     hits = 0
     misses = 0
@@ -137,7 +137,7 @@ def word2vecMatrix(statements):
     vocab_size = len(statement_tokenizer.word_index) + 1
     print('Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', binary=True)
+        './word2vec/GoogleNews-vectors-negative300.bin', limit=20000, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]

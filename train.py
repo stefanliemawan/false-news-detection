@@ -85,32 +85,32 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     model.compile(loss=loss_function,
                   optimizer=optimizer, metrics=['accuracy'])
 
-    # history = model.fit(
-    #     [x_train1, x_train2], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2], [y_val1, y_val2]), batch_size=batch_size, verbose=1)
+    history = model.fit(
+        [x_train1, x_train2], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2], [y_val1, y_val2]), batch_size=batch_size, verbose=1)
 
-    kf = KFold(n_splits=10, shuffle=True)
-    k_fold = 1
+    # kf = KFold(n_splits=10, shuffle=True)
+    # k_fold = 1
 
-    for train_index, test_index in kf.split(x_train1):
-        print("k = ", k_fold)
+    # for train_index, test_index in kf.split(x_train1):
+    #     print("k = ", k_fold)
 
-        k_x_train1, k_x_test1 = x_train1[train_index], x_train1[test_index]
-        k_x_train2, k_x_test2 = x_train2[train_index], x_train2[test_index]
-        k_y_train1, k_y_test1 = y_train1[train_index], y_train1[test_index]
-        k_y_train2, k_y_test2 = y_train2[train_index], y_train2[test_index]
-        model.fit(
-            [k_x_train1, k_x_train2], [k_y_train1, k_y_train2], epochs=num_epoch, validation_data=([k_x_test1, k_x_test2], [k_y_test1, k_y_test2]), batch_size=batch_size, verbose=1)
-        model.evaluate([k_x_test1, k_x_test2], [
-                       k_y_test1, k_y_test2], verbose=1)
-        # print("### EVALUATION ###")
-        # model.evaluate([x_test1, x_test2], [y_test1, y_test2], verbose=1)
-        # model.evaluate([x_val1, x_val2], [y_val1, y_val2], verbose=1)
+    #     k_x_train1, k_x_test1 = x_train1[train_index], x_train1[test_index]
+    #     k_x_train2, k_x_test2 = x_train2[train_index], x_train2[test_index]
+    #     k_y_train1, k_y_test1 = y_train1[train_index], y_train1[test_index]
+    #     k_y_train2, k_y_test2 = y_train2[train_index], y_train2[test_index]
+    #     model.fit(
+    #         [k_x_train1, k_x_train2], [k_y_train1, k_y_train2], epochs=num_epoch, validation_data=([k_x_test1, k_x_test2], [k_y_test1, k_y_test2]), batch_size=batch_size, verbose=1)
+    #     model.evaluate([k_x_test1, k_x_test2], [
+    #                    k_y_test1, k_y_test2], verbose=1)
+    #     # print("### EVALUATION ###")
+    #     # model.evaluate([x_test1, x_test2], [y_test1, y_test2], verbose=1)
+    #     # model.evaluate([x_val1, x_val2], [y_val1, y_val2], verbose=1)
 
-        k_fold += 1
+    #     k_fold += 1
 
     print("### EVALUATION ###")
     model.evaluate([x_test1, x_test2], [y_test1, y_test2], verbose=1)
     model.evaluate([x_val1, x_val2], [y_val1, y_val2], verbose=1)
     # plot(history)
 
-    model.save('./models/256-10-model1.h5')
+    model.save('./models/256-10-no-duplicate-model1.h5')

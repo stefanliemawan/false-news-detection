@@ -31,7 +31,8 @@ def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
     x1 = Input(shape=(x1_shape[1], ), name="input_1")
     emb1_1 = Embedding(
         100000, emb_matrix.shape[1], trainable=True, name="embedding_1_1")(x1)
-    drop1_1 = Dropout(d_scale, name="dropout_1_1")(emb1_1)
+    drop1_1 = Dropout(d_scale,
+                      name="dropout_1_1")(emb1_1)
     cnn1_1 = Conv1D(128, 5,
                     activation="relu", padding="same", name="conv1d_1_1")(drop1_1)
     mp1_1 = MaxPooling1D(5, name="max_pooling1D_1_1")(cnn1_1)
@@ -61,11 +62,15 @@ def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
 
 def main():
     data = pd.read_csv('./cleanDatasets/merged_politifact.csv')
+    print(len(data['statement']) -
+          len(data['statement'].drop_duplicates()), "Duplicates column")
+    data = data.drop_duplicates(subset=["statement"])
     print("Full Data Shape = ", data.shape)
     print(data['label'].value_counts())
-    num_epoch = 20
+    num_epoch = 21
     train(data, processPoliti, politiModel, word2vecMatrix, num_epoch)
     # 0.65 val accuracy, 0.9 training accuracy
+    # 0.69 val accuracy, 0.8 training accuracy with 10
     # stop learning after around 10 epoch
 
 
