@@ -19,7 +19,7 @@ from sklearn.model_selection import KFold
 optimizer = tf.keras.optimizers.RMSprop()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-batch_size = 256
+batch_size = 128
 
 
 def plot(history):
@@ -56,14 +56,14 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     n_output2 = y2.shape[1]
 
     x_train1, x_test1, y_train1, y_test1 = train_test_split(
-        x1, y1, test_size=0.1, random_state=42)
+        x1, y1, test_size=0.08, random_state=42)
     x_train1, x_val1, y_train1, y_val1 = train_test_split(
-        x_train1, y_train1, test_size=0.1, random_state=42)
+        x_train1, y_train1, test_size=0.08, random_state=42)
 
     x_train2, x_test2, y_train2, y_test2 = train_test_split(
-        x2, y2, test_size=0.1, random_state=42)
+        x2, y2, test_size=0.08, random_state=42)
     x_train2, x_val2, y_train2, y_val2 = train_test_split(
-        x_train2, y_train2, test_size=0.1, random_state=42)
+        x_train2, y_train2, test_size=0.08, random_state=42)
 
     print('x_train1 shape =', x_train1.shape)
     print('x_train2 shape =', x_train2.shape)
@@ -111,6 +111,6 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     print("### EVALUATION ###")
     model.evaluate([x_test1, x_test2], [y_test1, y_test2], verbose=1)
     model.evaluate([x_val1, x_val2], [y_val1, y_val2], verbose=1)
-    # plot(history)
+    plot(history)
 
-    model.save('./models/256-10-no-duplicate-model1.h5')
+    # model.save('./models/256-10-balanced-no-duplicate-model1.h5')

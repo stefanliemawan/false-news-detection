@@ -121,10 +121,10 @@ def initFakeNewsNet():
     gossip.to_csv('./cleanDatasets/FNN_gossip.csv', index=False)
 
 
-def main():
+# def main():
     # initLiarData()
     # initPolitifact()
-    initFakeNewsNet()
+    # initFakeNewsNet()
 
 
-main()
+# main()
