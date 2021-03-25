@@ -18,22 +18,24 @@ def getSubjectiveWordsCount(row):
 def getSubjectivity(row):
     subjectivity = round(TextBlob(row.statement).sentiment.subjectivity, 2)
     # subjectivity = round(TextBlob(row.text).sentiment.subjectivity,1)
-    if (subjectivity <= 0.2):
-        return 'VERY-LOW'
-    elif (subjectivity > 0.2) and (subjectivity <= 0.4):
-        return 'LOW'
-    elif (subjectivity > 0.4) and (subjectivity <= 0.6):
-        return 'MEDIUM'
-    elif (subjectivity > 0.6) and (subjectivity <= 0.8):
-        return 'HIGH'
-    elif (subjectivity > 0.8):
-        return 'VERY-HIGH'
-    # if (subjectivity <= 0.3):
+    # if (subjectivity <= 0.2):
+    #     return 'VERY-LOW'
+    # elif (subjectivity > 0.2) and (subjectivity <= 0.4):
     #     return 'LOW'
-    # elif (subjectivity > 0.3) and (subjectivity <= 0.7):
+    # elif (subjectivity > 0.4) and (subjectivity <= 0.6):
     #     return 'MEDIUM'
-    # elif (subjectivity > 0.7):
+    # elif (subjectivity > 0.6) and (subjectivity <= 0.8):
     #     return 'HIGH'
+    # elif (subjectivity > 0.8):
+    #     return 'VERY-HIGH'
+    if (subjectivity <= 0.2):
+        return 'LOW'
+    elif (subjectivity > 0.2) and (subjectivity <= 0.5):
+        return 'MEDIUM'
+    elif (subjectivity > 0.5):
+        return 'HIGH'
+
+    # play around with the value
 
 
 def getPolarity(row):

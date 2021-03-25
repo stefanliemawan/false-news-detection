@@ -60,8 +60,8 @@ def cleanDataText(df, textHeader):
     df[textHeader] = df[textHeader].apply(lambda x: ' '.join(
         [word for word in x.split() if word not in (stop)]))
     df[textHeader] = df[textHeader].map(lambda x: re.sub(r'\W+', ' ', x))
-    # df = simplifyLabel(df)
-    # df = handleNaN(df)
+    df = simplifyLabel(df)
+    df = handleNaN(df)
     return df
 
 
@@ -138,8 +138,9 @@ def mergePolitifact():
     data = data.reset_index(drop=True)
     data = data.drop(['id', 'subject', "speaker's job title",
                       'state', 'party', 'context', 'barely true counts', 'false counts', 'half true counts', 'mostly true counts', 'pants on fire counts', 'date', 'checker'], axis=1)
+    data['speaker'] = data['speaker'].str.lower()
     data['speaker'] = data['speaker'].str.replace('-', ' ')
-    data = cleanDataText(data, 'speaker')
+    print(data)
     data.to_csv('./cleanDatasets/merged_politifact.csv', index=False)
 
 
@@ -164,10 +165,10 @@ def addTags():
 
 def main():
     # inplace true?
+    initLiarData()
+    initPolitifact()
+    mergePolitifact()
     addTags()
-    # initLiarData()
-    # initPolitifact()
-    # mergePolitifact()
     # initFakeNewsNet()
 
 

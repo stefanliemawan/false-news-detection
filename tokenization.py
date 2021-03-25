@@ -38,7 +38,7 @@ def tokenizeStatement(tokenizer, data):
     # print(wi[:100])
     # np.savetxt('statement_word_index.cxv', wordIndex, delimiter=",")
     maxlen = max([len(x) for x in sequences])
-    print(np.mean([len(x) for x in sequences]))
+    # print(np.mean([len(x) for x in sequences]))
     # maxlen = 50
     # play with maxlen?
 
@@ -142,7 +142,9 @@ def word2vecMatrix(statements):
     vocab_size = len(statement_tokenizer.word_index) + 1
     print('Word2Vec Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
+        './word2vec/GoogleNews-vectors-negative300.bin', binary=True)
+    # w2v = gensim.models.KeyedVectors.load_word2vec_format(
+    #     './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
@@ -242,7 +244,6 @@ def processLiar(data):
 def processPoliti(data):
     statement = tokenizeStatement(
         statement_tokenizer, data['statement'],)
-
     speaker = encode(speaker_encoder, data['speaker'], False)
     swc = data['subjectiveWordsCount']
     polarity = data['polarity']
@@ -268,10 +269,10 @@ def processPoliti(data):
     #     json.dump(subj_dict, f)
 
     x1 = statement
-
-    x2 = np.array(
-        list(map(list, zip(speaker, polarity, swc))))
-    x2 = np.concatenate((x2, tags), axis=1)
+    x2 = np.reshape(speaker, (-1, 1))
+    # x2 = np.array(
+    #     list(map(list, zip(speaker, swc))))
+    # x2 = np.concatenate((x2, tags), axis=1)
 
     y1 = label
     y2 = subjectivity

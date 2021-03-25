@@ -20,8 +20,7 @@ optimizer = tf.keras.optimizers.Adam()
 # optimizer = tf.keras.optimizers.Adadelta()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-# batch_size = 64
-batch_size = 256
+batch_size = 64
 
 
 def plot(history):
@@ -51,11 +50,12 @@ def plot(history):
 
 def train(data, processFunction, createModelFunction, createEmbeddingFunction, num_epoch):
     data = shuffle(data)
+    # data = data.head(5000)
     emb_matrix = createEmbeddingFunction(data['statement'])
 
     x1, x2, y1, y2 = processFunction(data)
 
-    # x2 = normalize(x2)
+    x2 = normalize(x2)
 
     n_output1 = y1.shape[1]
     n_output2 = y2.shape[1]
@@ -93,7 +93,7 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     history = model.fit(
         [x_train1, x_train2], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2], [y_val1, y_val2]), batch_size=batch_size, verbose=1)
 
-    # kf = KFold(n_splits=3, shuffle=True)
+    # kf = KFold(n_splits=5, shuffle=True)
     # k_fold = 1
 
     # for train_index, test_index in kf.split(x_train1):
