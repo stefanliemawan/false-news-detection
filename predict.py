@@ -11,7 +11,7 @@ from preprocess import cleanDataText
 
 
 def processInputTextOnly(texts, model):
-    tokenizer = Tokenizer()
+    tokenizer = Tokenizer(num_words=19129)
     tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
 
@@ -48,7 +48,8 @@ def getAccuracy(predict_data):
 
 
 def predict(data, col_name, label, binary):
-    model = keras.models.load_model('./models/256-10-model1.h5')
+    # model = keras.models.load_model('./models/256-10-model1.h5')
+    model = keras.models.load_model('./models/128-20-no-duplicate-model1.h5')
     predict_data = []
 
     y1_classes, y2_classes = processInputTextOnly(data[col_name], model)
@@ -129,7 +130,7 @@ def fakeNewsNet():
 
 def nytimes():
     ny_data = pd.DataFrame(['Louisiana House Race Sets Up a Democratic Showdown in New Orleans',
-                            'Sexual Anguish of Atlanta Suspect Is Familiar Thorn for Evangelicals'], columns=['statement'])
+                            'Sexual Anguish of Atlanta Suspect Is Familiar Thorn for Evangelicals', 'Five Who Used Marijuana in Past Will Exit White House, Calling New Guidelines Into Question', 'Assaulting the Truth, Ron Johnson Helps Erode Confidence in Government', 'Louisiana House Race Sets Up a Democratic Showdown in New Orleans', 'Defense Secretary Austin Make Unannounced Visit to Afghanistan', 'Louisiana House Race Sets Up a Democratic Showdown in New Orleans', 'Biden and Harris Condemn Violence Against Asian-Americans', 'Confronting Violence Against Asians, Biden Says That We Cannot Be Complicit', 'Reed Disputes Groping Allegation, Calling Woman’s Account Not Accurate', 'Stay Scattered and Avoid Police, Proud Boys Were Told Before Capitol Riot'], columns=['statement'])
     ny_data = cleanDataText(ny_data, 'statement')
     predict_data = predict(ny_data, 'statement', label=False, binary=False)
     print(predict_data)
@@ -146,8 +147,8 @@ def newsCategoryDataset():
 def main():
     # fakeTrue()
     # fakeNewsNet()
-    # nytimes()
-    newsCategoryDataset()
+    nytimes()
+    # newsCateg oryDataset()
 
 
 main()

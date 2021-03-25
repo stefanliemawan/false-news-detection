@@ -15,7 +15,7 @@ from gensim.models.word2vec import Word2Vec
 # Tokenize
 # https://medium.com/@sthacruz/fake-news-classification-using-glove-and-long-short-term-memory-lstm-a48f1dd605ab
 
-statement_tokenizer = Tokenizer()
+statement_tokenizer = Tokenizer(num_words=10000)
 subject_tokenizer = Tokenizer()
 
 context_encoder = LabelEncoder()
@@ -33,12 +33,17 @@ def tokenizeStatement(tokenizer, data):
     tokenizer.fit_on_texts(data)
     sequences = tokenizer.texts_to_sequences(data)
     wordIndex = tokenizer.word_index
-    # print('Vocabulary size: ', len(wordIndex))
+    print('Statement Vocabulary size: ', len(wordIndex))
+    # wi = [i for i, j in wordIndex.items() if len(i) == 1]
+    # print(wi[:100])
+    # np.savetxt('statement_word_index.cxv', wordIndex, delimiter=",")
     maxlen = max([len(x) for x in sequences])
-    # maxlen = 47
+    print(np.mean([len(x) for x in sequences]))
+    # maxlen = 50
+    # play with maxlen?
 
     padSequences = pad_sequences(
-        sequences, padding='post', truncating='post', maxlen=25)
+        sequences, padding='post', truncating='post', maxlen=maxlen)
     # print('Shape of data tensor: ', padSequences.shape)
     return np.array(padSequences)
 
@@ -105,7 +110,7 @@ def gloveMatrix(statements):
     print('Vocabulary Size = ', vocab_size)
 
     emb_index = {}
-    with open("./glove/glove.twitter.27B.200d.txt", 'r', encoding="utf-8") as f:
+    with open("./glove/glove.6B.300d.txt", 'r', encoding="utf-8") as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -113,7 +118,7 @@ def gloveMatrix(statements):
             emb_index[word] = vector
     print('Loaded %s word vectors.' % len(emb_index))
 
-    emb_matrix = np.zeros((vocab_size, 200))
+    emb_matrix = np.zeros((vocab_size, 300))
 
     hits = 0
     misses = 0
@@ -135,7 +140,7 @@ def word2vecMatrix(statements):
     statement_tokenizer.fit_on_texts(statements)
     word_index = statement_tokenizer.word_index
     vocab_size = len(statement_tokenizer.word_index) + 1
-    print('Vocabulary Size = ', vocab_size)
+    print('Word2Vec Vocabulary Size = ', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
         './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
     # limit max around 1m
@@ -239,33 +244,34 @@ def processPoliti(data):
         statement_tokenizer, data['statement'],)
 
     speaker = encode(speaker_encoder, data['speaker'], False)
-    # checker = encode(checker_encoder, data['checker'], False)
-    # date = handleDate(data['date'])
     swc = data['subjectiveWordsCount']
-    # polarity = data['polarity']
+    polarity = data['polarity']
     label = encode(label_encoder, data['label'], True)
     subjectivity = encode(subj_encoder, data['subjectivity'], True)
 
-    label_dict = dict(zip(label_encoder.classes_,
-                          label_encoder.transform(label_encoder.classes_)))
-    label_dict = {str(v): k for k, v in label_dict.items()}
-    subj_dict = dict(zip(subj_encoder.classes_,
-                         subj_encoder.transform(subj_encoder.classes_)))
-    subj_dict = {str(v): k for k, v in subj_dict.items()}
+    tags = np.array(data.drop(['label', 'statement', 'speaker',
+                               'polarity', 'subjectiveWordsCount', 'subjectivity'], axis=1))
 
-    print(label_dict)
-    print(subj_dict)
+    # label_dict = dict(zip(label_encoder.classes_,
+    #                       label_encoder.transform(label_encoder.classes_)))
+    # label_dict = {str(v): k for k, v in label_dict.items()}
+    # subj_dict = dict(zip(subj_encoder.classes_,
+    #                      subj_encoder.transform(subj_encoder.classes_)))
+    # subj_dict = {str(v): k for k, v in subj_dict.items()}
 
-    with open('label_mapping.json', 'w') as f:
-        json.dump(label_dict, f)
-    with open('subj_mapping.json', 'w') as f:
-        json.dump(subj_dict, f)
+    # print(label_dict)
+    # print(subj_dict)
+
+    # with open('label_mapping.json', 'w') as f:
+    #     json.dump(label_dict, f)
+    # with open('subj_mapping.json', 'w') as f:
+    #     json.dump(subj_dict, f)
 
     x1 = statement
 
     x2 = np.array(
-        list(map(list, zip(speaker, swc))))
-    # x2 = np.concatenate((date, x2), axis=1)
+        list(map(list, zip(speaker, polarity, swc))))
+    x2 = np.concatenate((x2, tags), axis=1)
 
     y1 = label
     y2 = subjectivity

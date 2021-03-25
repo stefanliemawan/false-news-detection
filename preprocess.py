@@ -7,7 +7,9 @@ import re
 from nltk.corpus import stopwords
 from sklearn.utils import shuffle
 from subjectivity import applyToDF
+from collections import Counter
 # nltk.download('stopwords')
+# nltk.download('tagsets')
 stop = stopwords.words('english')
 
 # inspired from https://towardsdatascience.com/detecting-fake-news-with-and-without-code-dd330ed449d9
@@ -59,7 +61,7 @@ def cleanDataText(df, textHeader):
         [word for word in x.split() if word not in (stop)]))
     df[textHeader] = df[textHeader].map(lambda x: re.sub(r'\W+', ' ', x))
     # df = simplifyLabel(df)
-    df = handleNaN(df)
+    # df = handleNaN(df)
     return df
 
 
@@ -121,10 +123,52 @@ def initFakeNewsNet():
     gossip.to_csv('./cleanDatasets/FNN_gossip.csv', index=False)
 
 
-# def main():
+def mergePolitifact():
+    liar_train = pd.read_csv(
+        './cleanDatasets/clean_liar_train.csv').reset_index(drop=True)
+    liar_test = pd.read_csv(
+        './cleanDatasets/clean_liar_test.csv').reset_index(drop=True)
+    liar_val = pd.read_csv(
+        './cleanDatasets/clean_liar_valid.csv').reset_index(drop=True)
+    politi = pd.read_csv(
+        './cleanDatasets/clean_politifact.csv').reset_index(drop=True)
+    data = pd.concat([liar_train, liar_test, liar_val,
+                      politi])
+    data = data.drop_duplicates(subset="statement")
+    data = data.reset_index(drop=True)
+    data = data.drop(['id', 'subject', "speaker's job title",
+                      'state', 'party', 'context', 'barely true counts', 'false counts', 'half true counts', 'mostly true counts', 'pants on fire counts', 'date', 'checker'], axis=1)
+    data['speaker'] = data['speaker'].str.replace('-', ' ')
+    data = cleanDataText(data, 'speaker')
+    data.to_csv('./cleanDatasets/merged_politifact.csv', index=False)
+
+
+# def addTags(row)
+
+def addTags():
+    data = pd.read_csv(
+        './cleanDatasets/merged_politifact.csv').reset_index(drop=True)
+    # tags = set(['', 'CC', 'CD', 'DT', 'EX', 'FW', 'IN',
+    #             'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNP', 'NNPS', 'NNS', 'PDT', 'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 'WDT', 'WP', 'WP$', 'WRB'])
+    # should use df.apply?
+    # nltk.help.upenn_tagset()
+    for index, row in data.iterrows():
+        sentence = nltk.pos_tag(nltk.word_tokenize(str(row['statement'])))
+        count = Counter([j for i, j in sentence])
+        for tag in list(count):
+            data.at[index, tag] = count[tag]
+    data.fillna(0, inplace=True)
+    print(data.shape)
+    data.to_csv('./cleanDatasets/merged_politifact_tagged.csv', index=False)
+
+
+def main():
+    # inplace true?
+    addTags()
     # initLiarData()
     # initPolitifact()
+    # mergePolitifact()
     # initFakeNewsNet()
 
 
-# main()
+main()

@@ -15,11 +15,13 @@ from sklearn.model_selection import KFold
 # from sklearn.metrics import classification_report
 
 # optimizer = tf.keras.optimizers.SGD()
-# optimizer = tf.keras.optimizers.Adam()
-optimizer = tf.keras.optimizers.RMSprop()
+optimizer = tf.keras.optimizers.Adam()
+# optimizer = tf.keras.optimizers.RMSprop()
+# optimizer = tf.keras.optimizers.Adadelta()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-batch_size = 128
+# batch_size = 64
+batch_size = 256
 
 
 def plot(history):
@@ -35,12 +37,15 @@ def plot(history):
                 'Output1 Validation', 'Output2 Validation'], loc='upper left')
     plt.show()
     # "Loss"
-    # plt.plot(history.history['loss'])
-    # plt.plot(history.history['val_loss'])
+    # plt.plot(history.history['output_1_loss'])
+    # plt.plot(history.history['output_2_loss'])
+    # plt.plot(history.history['val_output_1_loss'])
+    # plt.plot(history.history['val_output_2_loss'])
     # plt.title('Model Loss')
     # plt.ylabel('Loss')
     # plt.xlabel('Epoch')
-    # plt.legend(['Train', 'Validation'], loc='upper left')
+    # plt.legend(['Output1 Train', 'Output2 train',
+    #             'Output1 Validation', 'Output2 Validation'], loc='upper left')
     # plt.show()
 
 
@@ -50,20 +55,20 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
 
     x1, x2, y1, y2 = processFunction(data)
 
-    x2 = normalize(x2)
+    # x2 = normalize(x2)
 
     n_output1 = y1.shape[1]
     n_output2 = y2.shape[1]
 
     x_train1, x_test1, y_train1, y_test1 = train_test_split(
-        x1, y1, test_size=0.08, random_state=42)
+        x1, y1, test_size=0.09, random_state=42)
     x_train1, x_val1, y_train1, y_val1 = train_test_split(
-        x_train1, y_train1, test_size=0.08, random_state=42)
+        x_train1, y_train1, test_size=0.1, random_state=42)
 
     x_train2, x_test2, y_train2, y_test2 = train_test_split(
-        x2, y2, test_size=0.08, random_state=42)
+        x2, y2, test_size=0.09, random_state=42)
     x_train2, x_val2, y_train2, y_val2 = train_test_split(
-        x_train2, y_train2, test_size=0.08, random_state=42)
+        x_train2, y_train2, test_size=0.1, random_state=42)
 
     print('x_train1 shape =', x_train1.shape)
     print('x_train2 shape =', x_train2.shape)
@@ -88,7 +93,7 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     history = model.fit(
         [x_train1, x_train2], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2], [y_val1, y_val2]), batch_size=batch_size, verbose=1)
 
-    # kf = KFold(n_splits=10, shuffle=True)
+    # kf = KFold(n_splits=3, shuffle=True)
     # k_fold = 1
 
     # for train_index, test_index in kf.split(x_train1):
@@ -113,4 +118,4 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     model.evaluate([x_val1, x_val2], [y_val1, y_val2], verbose=1)
     plot(history)
 
-    # model.save('./models/256-10-balanced-no-duplicate-model1.h5')
+    # model.save('./models/128-20-no-duplicate-model1.h5')

@@ -37,7 +37,7 @@ def getSubjectivity(row):
 
 
 def getPolarity(row):
-    polarity = TextBlob(row.statement).sentiment.polarity
+    polarity = TextBlob(row.statement).sentiment.polarity + 1
     # if polarity < 0:
     #     polarity = 0
     return polarity
