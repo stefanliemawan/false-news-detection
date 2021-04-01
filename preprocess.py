@@ -94,8 +94,23 @@ def initPolitifact():
     data.to_csv('./cleanDatasets/clean_politifact.csv', index=False)
 
 
-def initFakeTrue():
-    print()
+def initMergedPolitifact():
+    data = pd.read_csv(
+        './datasets/merged_politifact.csv').reset_index(drop=True)
+    data = applyToDF(data)  # from subjectivity
+    data = cleanDataText(data, 'statement')
+
+    data = data[data['label'] != 'full-flop']
+    data = data[data['label'] != 'half-flip']
+    data = data[data['label'] != 'no-flip']
+    data = data.drop_duplicates(subset="statement")
+    print(data)
+    print(data.shape)
+
+    print(data['label'].value_counts())
+    print(data['subjectivity'].value_counts())
+
+    data.to_csv('./cleanDatasets/merged_politifact.csv', index=False)
 
 
 def initFakeNewsNet():
@@ -134,6 +149,7 @@ def mergePolitifact():
         './cleanDatasets/clean_politifact.csv').reset_index(drop=True)
     data = pd.concat([liar_train, liar_test, liar_val,
                       politi])
+    print(data.shape)
     data = data.drop_duplicates(subset="statement")
     data = data.reset_index(drop=True)
     data = data.drop(['id', 'subject', "speaker's job title",
@@ -141,6 +157,7 @@ def mergePolitifact():
     data['speaker'] = data['speaker'].str.lower()
     data['speaker'] = data['speaker'].str.replace('-', ' ')
     print(data)
+    print(data.shape)
     data.to_csv('./cleanDatasets/merged_politifact.csv', index=False)
 
 
@@ -165,9 +182,10 @@ def addTags():
 
 def main():
     # inplace true?
-    initLiarData()
-    initPolitifact()
-    mergePolitifact()
+    # initLiarData()
+    # initPolitifact()
+    # mergePolitifact()
+    initMergedPolitifact()
     addTags()
     # initFakeNewsNet()
 

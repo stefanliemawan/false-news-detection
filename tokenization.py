@@ -110,7 +110,7 @@ def gloveMatrix(statements):
     print('Vocabulary Size = ', vocab_size)
 
     emb_index = {}
-    with open("./glove/glove.6B.300d.txt", 'r', encoding="utf-8") as f:
+    with open("./glove/glove.6B.100d.txt", 'r', encoding="utf-8") as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -118,7 +118,7 @@ def gloveMatrix(statements):
             emb_index[word] = vector
     print('Loaded %s word vectors.' % len(emb_index))
 
-    emb_matrix = np.zeros((vocab_size, 300))
+    emb_matrix = np.zeros((vocab_size, 100))
 
     hits = 0
     misses = 0
@@ -245,13 +245,13 @@ def processPoliti(data):
     statement = tokenizeStatement(
         statement_tokenizer, data['statement'],)
     speaker = encode(speaker_encoder, data['speaker'], False)
-    swc = data['subjectiveWordsCount']
-    polarity = data['polarity']
+    # swc = data['subjectiveWordsCount']
+    # polarity = data['polarity']
     label = encode(label_encoder, data['label'], True)
     subjectivity = encode(subj_encoder, data['subjectivity'], True)
 
-    tags = np.array(data.drop(['label', 'statement', 'speaker',
-                               'polarity', 'subjectiveWordsCount', 'subjectivity'], axis=1))
+    tags = np.array(
+        data.drop(['label', 'statement', 'speaker', 'subjectivity'], axis=1))
 
     # label_dict = dict(zip(label_encoder.classes_,
     #                       label_encoder.transform(label_encoder.classes_)))
@@ -269,10 +269,9 @@ def processPoliti(data):
     #     json.dump(subj_dict, f)
 
     x1 = statement
-    x2 = np.reshape(speaker, (-1, 1))
-    # x2 = np.array(
-    #     list(map(list, zip(speaker, swc))))
-    # x2 = np.concatenate((x2, tags), axis=1)
+    # x2 = np.reshape(speaker, (-1, 1))
+    # x2 = speaker
+    x2 = np.column_stack((speaker, tags))
 
     y1 = label
     y2 = subjectivity

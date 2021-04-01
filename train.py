@@ -10,7 +10,7 @@ from sklearn.utils import shuffle
 from keras.optimizers import SGD
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, GridSearchCV
 # from sklearn.metrics import confusion_matrix
 # from sklearn.metrics import classification_report
 
@@ -20,6 +20,7 @@ optimizer = tf.keras.optimizers.Adam()
 # optimizer = tf.keras.optimizers.Adadelta()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+# loss_regression = tf.keras.losses.MeanAbsoluteError()
 batch_size = 64
 
 
@@ -50,7 +51,6 @@ def plot(history):
 
 def train(data, processFunction, createModelFunction, createEmbeddingFunction, num_epoch):
     data = shuffle(data)
-    # data = data.head(5000)
     emb_matrix = createEmbeddingFunction(data['statement'])
 
     x1, x2, y1, y2 = processFunction(data)
@@ -59,6 +59,7 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
 
     n_output1 = y1.shape[1]
     n_output2 = y2.shape[1]
+    # n_output2 = 1
 
     x_train1, x_test1, y_train1, y_test1 = train_test_split(
         x1, y1, test_size=0.09, random_state=42)

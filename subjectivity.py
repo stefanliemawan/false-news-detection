@@ -3,6 +3,7 @@ from nltk import tokenize
 import pandas as pd
 import numpy as np
 from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 
 def getSubjectiveWordsCount(row):
@@ -18,22 +19,30 @@ def getSubjectiveWordsCount(row):
 def getSubjectivity(row):
     subjectivity = round(TextBlob(row.statement).sentiment.subjectivity, 2)
     # subjectivity = round(TextBlob(row.text).sentiment.subjectivity,1)
-    # if (subjectivity <= 0.2):
-    #     return 'VERY-LOW'
-    # elif (subjectivity > 0.2) and (subjectivity <= 0.4):
-    #     return 'LOW'
-    # elif (subjectivity > 0.4) and (subjectivity <= 0.6):
-    #     return 'MEDIUM'
-    # elif (subjectivity > 0.6) and (subjectivity <= 0.8):
-    #     return 'HIGH'
-    # elif (subjectivity > 0.8):
-    #     return 'VERY-HIGH'
-    if (subjectivity <= 0.2):
+    # return subjectivity
+
+    if (subjectivity == 0.00):
+        return 'VERY-LOW'
+    elif (subjectivity > 0.00) and (subjectivity <= 0.2):
         return 'LOW'
-    elif (subjectivity > 0.2) and (subjectivity <= 0.5):
+    elif (subjectivity > 0.2) and (subjectivity <= 0.4):
         return 'MEDIUM'
-    elif (subjectivity > 0.5):
+    elif (subjectivity > 0.6) and (subjectivity <= 0.8):
         return 'HIGH'
+    elif (subjectivity > 0.8):
+        return 'VERY-HIGH'
+
+    # if (subjectivity <= 0.2):
+    #     return 'LOW'
+    # elif (subjectivity > 0.2) and (subjectivity <= 0.5):
+    #     return 'MEDIUM'
+    # elif (subjectivity > 0.5):
+    #     return 'HIGH'
+
+    # analyzer = SentimentIntensityAnalyzer()
+    # vs = analyzer.polarity_scores(row.statement)
+    # c = max(vs, key=vs.get)
+    # return c
 
     # play around with the value
 
@@ -46,8 +55,8 @@ def getPolarity(row):
 
 
 def applyToDF(df):
-    df['polarity'] = df.apply(getPolarity, axis=1)
-    df['subjectiveWordsCount'] = df.apply(getSubjectiveWordsCount, axis=1)
+    # df['polarity'] = df.apply(getPolarity, axis=1)
+    # df['subjectiveWordsCount'] = df.apply(getSubjectiveWordsCount, axis=1)
     df['subjectivity'] = df.apply(
         getSubjectivity, axis=1)
     return df
