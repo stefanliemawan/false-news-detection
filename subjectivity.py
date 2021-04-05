@@ -18,19 +18,17 @@ def getSubjectiveWordsCount(row):
 
 def getSubjectivity(row):
     subjectivity = round(TextBlob(row.statement).sentiment.subjectivity, 2)
-    # subjectivity = round(TextBlob(row.text).sentiment.subjectivity,1)
+    # # subjectivity = round(TextBlob(row.text).sentiment.subjectivity,1)
     # return subjectivity
 
     if (subjectivity == 0.00):
-        return 'VERY-LOW'
-    elif (subjectivity > 0.00) and (subjectivity <= 0.2):
+        return 'NONE'
+    elif (subjectivity > 0.00) and (subjectivity <= 0.25):
         return 'LOW'
-    elif (subjectivity > 0.2) and (subjectivity <= 0.4):
+    elif (subjectivity > 0.25) and (subjectivity <= 0.5):
         return 'MEDIUM'
-    elif (subjectivity > 0.6) and (subjectivity <= 0.8):
+    elif (subjectivity > 0.5):
         return 'HIGH'
-    elif (subjectivity > 0.8):
-        return 'VERY-HIGH'
 
     # if (subjectivity <= 0.2):
     #     return 'LOW'
@@ -55,7 +53,7 @@ def getPolarity(row):
 
 
 def applyToDF(df):
-    # df['polarity'] = df.apply(getPolarity, axis=1)
+    df['polarity'] = df.apply(getPolarity, axis=1)
     # df['subjectiveWordsCount'] = df.apply(getSubjectiveWordsCount, axis=1)
     df['subjectivity'] = df.apply(
         getSubjectivity, axis=1)

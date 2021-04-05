@@ -20,6 +20,7 @@ optimizer = tf.keras.optimizers.Adam()
 # optimizer = tf.keras.optimizers.Adadelta()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+# loss_classification = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 # loss_regression = tf.keras.losses.MeanAbsoluteError()
 batch_size = 64
 
@@ -50,7 +51,7 @@ def plot(history):
 
 
 def train(data, processFunction, createModelFunction, createEmbeddingFunction, num_epoch):
-    data = shuffle(data)
+    # data = shuffle(data)
     emb_matrix = createEmbeddingFunction(data['statement'])
 
     x1, x2, y1, y2 = processFunction(data)
@@ -59,17 +60,16 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
 
     n_output1 = y1.shape[1]
     n_output2 = y2.shape[1]
-    # n_output2 = 1
 
     x_train1, x_test1, y_train1, y_test1 = train_test_split(
-        x1, y1, test_size=0.09, random_state=42)
+        x1, y1, test_size=0.1, random_state=42)
     x_train1, x_val1, y_train1, y_val1 = train_test_split(
-        x_train1, y_train1, test_size=0.1, random_state=42)
+        x_train1, y_train1, test_size=0.11, random_state=42)
 
     x_train2, x_test2, y_train2, y_test2 = train_test_split(
-        x2, y2, test_size=0.09, random_state=42)
+        x2, y2, test_size=0.1, random_state=42)
     x_train2, x_val2, y_train2, y_val2 = train_test_split(
-        x_train2, y_train2, test_size=0.1, random_state=42)
+        x_train2, y_train2, test_size=0.11, random_state=42)
 
     print('x_train1 shape =', x_train1.shape)
     print('x_train2 shape =', x_train2.shape)

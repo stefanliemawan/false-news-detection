@@ -110,7 +110,7 @@ def gloveMatrix(statements):
     print('Vocabulary Size = ', vocab_size)
 
     emb_index = {}
-    with open("./glove/glove.6B.100d.txt", 'r', encoding="utf-8") as f:
+    with open("./glove/glove.6B.300d.txt", 'r', encoding="utf-8") as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -118,7 +118,7 @@ def gloveMatrix(statements):
             emb_index[word] = vector
     print('Loaded %s word vectors.' % len(emb_index))
 
-    emb_matrix = np.zeros((vocab_size, 100))
+    emb_matrix = np.zeros((vocab_size, 300))
 
     hits = 0
     misses = 0
@@ -141,10 +141,10 @@ def word2vecMatrix(statements):
     word_index = statement_tokenizer.word_index
     vocab_size = len(statement_tokenizer.word_index) + 1
     print('Word2Vec Vocabulary Size = ', vocab_size)
-    w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', binary=True)
     # w2v = gensim.models.KeyedVectors.load_word2vec_format(
-    #     './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
+    #     './word2vec/GoogleNews-vectors-negative300.bin', binary=True)
+    w2v = gensim.models.KeyedVectors.load_word2vec_format(
+        './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
@@ -246,7 +246,7 @@ def processPoliti(data):
         statement_tokenizer, data['statement'],)
     speaker = encode(speaker_encoder, data['speaker'], False)
     # swc = data['subjectiveWordsCount']
-    # polarity = data['polarity']
+    polarity = np.array(data['polarity'])
     label = encode(label_encoder, data['label'], True)
     subjectivity = encode(subj_encoder, data['subjectivity'], True)
 
@@ -269,9 +269,10 @@ def processPoliti(data):
     #     json.dump(subj_dict, f)
 
     x1 = statement
-    # x2 = np.reshape(speaker, (-1, 1))
-    # x2 = speaker
-    x2 = np.column_stack((speaker, tags))
+    x2 = np.reshape(speaker, (-1, 1))
+    # x2 = np.column_stack((speaker, polarity))
+    # x2 = np.column_stack((speaker, pplarity, tags))
+    # try with these three
 
     y1 = label
     y2 = subjectivity

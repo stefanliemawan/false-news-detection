@@ -88,6 +88,7 @@ def initPolitifact():
         './datasets/PolitiFact/politifact.csv').reset_index(drop=True), 'statement')
     data = data.drop(['Unnamed: 0'], axis=1)
     data = data[data['label'] != 'full-flop']
+
     data = data[data['label'] != 'half-flip']
     data = data[data['label'] != 'no-flip']
     data = applyToDF(data)  # from subjectivity
