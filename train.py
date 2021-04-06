@@ -51,11 +51,11 @@ def plot(history):
 
 
 def train(data, processFunction, createModelFunction, createEmbeddingFunction, num_epoch):
-    # data = shuffle(data)
+    data = shuffle(data)
     emb_matrix = createEmbeddingFunction(data['statement'])
+    print('Embedding Matrix Shape', emb_matrix.shape)
 
     x1, x2, y1, y2 = processFunction(data)
-
     x2 = normalize(x2)
 
     n_output1 = y1.shape[1]
@@ -71,18 +71,18 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     x_train2, x_val2, y_train2, y_val2 = train_test_split(
         x_train2, y_train2, test_size=0.11, random_state=42)
 
-    print('x_train1 shape =', x_train1.shape)
-    print('x_train2 shape =', x_train2.shape)
-    print('y_train1 shape =', y_train1.shape)
-    print('y_train2 shape =', y_train2.shape)
-    print('x_test1 shape =', x_test1.shape)
-    print('x_test2 shape =', x_test2.shape)
-    print('y_test1 shape =', y_test1.shape)
-    print('y_test2 shape =', y_test2.shape)
-    print('x_val1 shape =', x_val1.shape)
-    print('x_val2 shape =', x_val2.shape)
-    print('y_val1 shape =', y_val1.shape)
-    print('y_val2 shape =', y_val2.shape)
+    print('x_train1 Shape', x_train1.shape)
+    print('x_train2 Shape', x_train2.shape)
+    print('y_train1 Shape', y_train1.shape)
+    print('y_train2 Shape', y_train2.shape)
+    print('x_test1 Shape', x_test1.shape)
+    print('x_test2 Shape', x_test2.shape)
+    print('y_test1 Shape', y_test1.shape)
+    print('y_test2 Shape', y_test2.shape)
+    print('x_val1 Shape', x_val1.shape)
+    print('x_val2 Shape', x_val2.shape)
+    print('y_val1 Shape', y_val1.shape)
+    print('y_val2 Shape', y_val2.shape)
 
     model = createModelFunction(
         x_train1.shape, x_train2.shape, n_output1, n_output2, emb_matrix)

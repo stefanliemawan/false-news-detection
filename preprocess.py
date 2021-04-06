@@ -8,11 +8,20 @@ from nltk.corpus import stopwords
 from sklearn.utils import shuffle
 from subjectivity import applyToDF
 from collections import Counter
+from nltk.stem import WordNetLemmatizer, PorterStemmer
 # nltk.download('stopwords')
 # nltk.download('tagsets')
+# nltk.download('wordnet')
 stop = stopwords.words('english')
 
 # inspired from https://towardsdatascience.com/detecting-fake-news-with-and-without-code-dd330ed449d9
+
+
+pd.set_option('display.max_colwidth', None)
+
+w_tokenizer = nltk.tokenize.WhitespaceTokenizer()
+lemmatizer = WordNetLemmatizer()
+stemmer = PorterStemmer()
 
 
 def punctuationRemoval(text):
@@ -53,31 +62,51 @@ def renameLiarColumn(df):
     return df
 
 
-def cleanDataText(df, textHeader):
-    # make all lower case and apply for more than statement
-    df[textHeader] = df[textHeader].str.lower()
-    df[textHeader] = df[textHeader].apply(punctuationRemoval)
-    df[textHeader] = df[textHeader].apply(lambda x: ' '.join(
-        [word for word in x.split() if word not in (stop)]))
-    df[textHeader] = df[textHeader].map(lambda x: re.sub(r'\W+', ' ', x))
+def lemmatize(text):
+    return ' '.join([lemmatizer.lemmatize(w) for w in w_tokenizer.tokenize(text)])
+
+
+def stem(text):
+    return ' '.join([stemmer.stem(w) for w in w_tokenizer.tokenize(text)])
+
+
+def cleanDataText(df):
+    # remove number?
+    df['statement'] = df['statement'].str.lower()
+    df['statement'] = df['statement'].str.replace('-', ' ')
+    df['statement'] = df['statement'].apply(punctuationRemoval)
+    df['statement'] = df['statement'].apply(lambda x: ' '.join(
+        [word for word in x.split() if word not in (stop)]))  # remove stop words
+    df['statement'] = df['statement'].map(lambda x: re.sub(
+        r'\W+', ' ', x))  # remove non-words character
+    df['statement'] = df['statement'].map(
+        lambda x: re.sub(r'\d+', ' ', x))  # remove numbers
+    df['statement'] = df['statement'].map(
+        lambda x: re.sub(r'\s+', ' ', x).strip())  # remove double space
+
+    print(df['statement'].head(20))
+    df['statement'] = df['statement'].apply(lemmatize)
+    print(df['statement'].head(20))
+    # df['statement'] = df['statement'].apply(stem)
+    # print(df['statement'].head(20))
     df = simplifyLabel(df)
-    df = handleNaN(df)
+    # df = handleNaN(df)
     return df
 
 
 def initLiarData():
     liar_train = cleanDataText(pd.read_csv(
-        './datasets/LIAR/liar_train_labeled.csv').reset_index(drop=True), 'statement')
+        './datasets/LIAR/liar_train_labeled.csv').reset_index(drop=True))
     liar_train = applyToDF(liar_train)
     liar_train.to_csv('./cleanDatasets/clean_liar_train.csv',
                       encoding='utf-8-sig', index=False)
     liar_test = cleanDataText(pd.read_csv(
-        './datasets/LIAR/liar_test_labeled.csv').reset_index(drop=True), 'statement')
+        './datasets/LIAR/liar_test_labeled.csv').reset_index(drop=True))
     liar_test = applyToDF(liar_test)
     liar_test.to_csv('./cleanDatasets/clean_liar_test.csv',
                      encoding='utf-8-sig', index=False)
     liar_valid = cleanDataText(pd.read_csv(
-        './datasets/LIAR/liar_valid_labeled.csv').reset_index(drop=True), 'statement')
+        './datasets/LIAR/liar_valid_labeled.csv').reset_index(drop=True))
     liar_valid = applyToDF(liar_valid)
     liar_valid.to_csv('./cleanDatasets/clean_liar_valid.csv',
                       encoding='utf-8-sig', index=False)
@@ -85,7 +114,7 @@ def initLiarData():
 
 def initPolitifact():
     data = cleanDataText(pd.read_csv(
-        './datasets/PolitiFact/politifact.csv').reset_index(drop=True), 'statement')
+        './datasets/PolitiFact/politifact.csv').reset_index(drop=True))
     data = data.drop(['Unnamed: 0'], axis=1)
     data = data[data['label'] != 'full-flop']
 
@@ -99,19 +128,30 @@ def initMergedPolitifact():
     data = pd.read_csv(
         './datasets/merged_politifact.csv').reset_index(drop=True)
     data = applyToDF(data)  # from subjectivity
-    data = cleanDataText(data, 'statement')
+    data = cleanDataText(data)
+    data['speaker'] = data['speaker'].str.lower()
+    data['speaker'] = data['speaker'].str.replace(' ', '-')
+    data['speaker'] = data['speaker'].str.replace('"', '')
 
     data = data[data['label'] != 'full-flop']
     data = data[data['label'] != 'half-flip']
     data = data[data['label'] != 'no-flip']
     data = data.drop_duplicates(subset="statement")
+    data.dropna(inplace=True)
     print(data)
     print(data.shape)
+
+    # print(data.head())
+    # is_NaN = data.isnull()
+    # row_has_NaN = is_NaN.any(axis=1)
+    # rows_with_NaN = data[row_has_NaN]
+    # print(rows_with_NaN)
 
     print(data['label'].value_counts())
     print(data['subjectivity'].value_counts())
 
-    data.to_csv('./cleanDatasets/merged_politifact.csv', index=False)
+    data.to_csv('./cleanDatasets/clean_merged_politifact.csv', index=False)
+    # data.to_csv('./cleanDatasets/clean_merged_politifact_stemmed.csv', index=False)
 
 
 def initFakeNewsNet():
@@ -178,7 +218,8 @@ def addTags():
             data.at[index, tag] = count[tag]
     data.fillna(0, inplace=True)
     print(data.shape)
-    data.to_csv('./cleanDatasets/merged_politifact_tagged.csv', index=False)
+    data.to_csv(
+        './cleanDatasets/clean_merged_politifact_tagged.csv', index=False)
 
 
 def main():
@@ -187,7 +228,7 @@ def main():
     # initPolitifact()
     # mergePolitifact()
     initMergedPolitifact()
-    addTags()
+    # addTags()
     # initFakeNewsNet()
 
 

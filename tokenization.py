@@ -15,7 +15,7 @@ from gensim.models.word2vec import Word2Vec
 # Tokenize
 # https://medium.com/@sthacruz/fake-news-classification-using-glove-and-long-short-term-memory-lstm-a48f1dd605ab
 
-statement_tokenizer = Tokenizer(num_words=10000)
+statement_tokenizer = Tokenizer(num_words=12000)
 subject_tokenizer = Tokenizer()
 
 context_encoder = LabelEncoder()
@@ -28,39 +28,49 @@ checker_encoder = LabelEncoder()
 label_encoder = LabelEncoder()
 subj_encoder = LabelEncoder()
 
+vocab_size = 0
+
+
+def returnVocabSize():
+    return vocab_size
+
 
 def tokenizeStatement(tokenizer, data):
     tokenizer.fit_on_texts(data)
     sequences = tokenizer.texts_to_sequences(data)
-    wordIndex = tokenizer.word_index
-    print('Statement Vocabulary size: ', len(wordIndex))
-    # wi = [i for i, j in wordIndex.items() if len(i) == 1]
+    word_index = tokenizer.word_index
+    # print(word_index)
+    global vocab_size
+    vocab_size = len(word_index) + 1
+    # print(word_index)
+    print('Statement Vocabulary size', vocab_size)
+    # wi = [i for i, j in word_index.items() if len(i) == 1]
     # print(wi[:100])
-    # np.savetxt('statement_word_index.cxv', wordIndex, delimiter=",")
+    # np.savetxt('statement_word_index.cxv', word_index, delimiter=",")
     maxlen = max([len(x) for x in sequences])
     # print(np.mean([len(x) for x in sequences]))
     # maxlen = 50
     # play with maxlen?
 
-    padSequences = pad_sequences(
+    padded_sequences = pad_sequences(
         sequences, padding='post', truncating='post', maxlen=maxlen)
-    # print('Shape of data tensor: ', padSequences.shape)
-    return np.array(padSequences)
+    # print('Shape of data tensor: ', padded_sequences.shape)
+    return np.array(padded_sequences)
 
 
 def tokenizeSubject(tokenizer, data):
     data = [x.split(',') for x in data]
     tokenizer.fit_on_texts(data)
     sequences = tokenizer.texts_to_sequences(data)
-    wordIndex = tokenizer.word_index
-    # print('Vocabulary size: ', len(wordIndex))
+    word_index = tokenizer.word_index
+    # print('Vocabulary size: ', len(word_index))
     maxlen = max([len(x) for x in sequences])
     # maxlen = 20
 
-    padSequences = pad_sequences(
+    padded_sequences = pad_sequences(
         sequences, padding='post', truncating='post', maxlen=5)
-    # print('Shape of data tensor: ', padSequences.shape)
-    return np.array(padSequences)
+    # print('Shape of data tensor: ', padded_sequences.shape)
+    return np.array(padded_sequences)
 
 
 def encode(encoder, data, onehot):
@@ -73,35 +83,6 @@ def encode(encoder, data, onehot):
         return np.array(encoded_y)
 
 
-def handleContext(data):
-    vectorizer = TfidfVectorizer()
-    tfidf = vectorizer.fit_transform(data)
-    df = pd.DataFrame(tfidf.toarray(), columns=vectorizer.get_feature_names())
-    context = df.idxmax(axis=1)
-    encoded_context = encode(context_encoder, data, False)
-    return np.array(encoded_context)
-
-
-def handleDate(data):
-    date = [d.split() for d in data]
-    res = []
-    m = {month: index for index, month in enumerate(
-        calendar.month_abbr) if month}
-    for d in date:
-        day = int(d[1][:-1])
-        month = int(m[d[0][:3]])
-        year = int(d[2][:4])
-        res.append([day, month, year])
-    return np.array(res)
-
-
-def tfidf(texts):
-    vectorizer = TfidfVectorizer(max_features=300)
-    vectorizer = vectorizer.fit(texts)
-    tfidf = vectorizer.transform(texts).toarray()
-    return tfidf
-
-
 def gloveMatrix(statements):
     global statement_tokenizer
     statement_tokenizer.fit_on_texts(statements)
@@ -110,7 +91,10 @@ def gloveMatrix(statements):
     print('Vocabulary Size = ', vocab_size)
 
     emb_index = {}
-    with open("./glove/glove.6B.300d.txt", 'r', encoding="utf-8") as f:
+    glove_path = "./glove/glove.6B.300d.txt"
+    # glove_path = "./glove/glove.42B.300d.txt"
+    # glove_path = "./glove/glove.twitter.27B.200d.txt"
+    with open(glove_path, 'r', encoding="utf-8") as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -140,11 +124,11 @@ def word2vecMatrix(statements):
     statement_tokenizer.fit_on_texts(statements)
     word_index = statement_tokenizer.word_index
     vocab_size = len(statement_tokenizer.word_index) + 1
-    print('Word2Vec Vocabulary Size = ', vocab_size)
-    # w2v = gensim.models.KeyedVectors.load_word2vec_format(
-    #     './word2vec/GoogleNews-vectors-negative300.bin', binary=True)
+    print('Word2Vec Vocabulary Size', vocab_size)
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
+        './word2vec/GoogleNews-vectors-negative300.bin', binary=True)
+    # w2v=gensim.models.KeyedVectors.load_word2vec_format(
+    #     './word2vec/GoogleNews-vectors-negative300.bin', limit=50000, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
@@ -198,49 +182,6 @@ def word2vecInput(statements):
     return x1
 
 
-def processLiar(data):
-    statement = tokenizeStatement(
-        statement_tokenizer, data['statement'],)
-    subject = tokenizeSubject(subject_tokenizer, data['subject'])
-
-    speaker = encode(speaker_encoder, data['speaker'], False)
-    sjt = encode(sjt_encoder, data["speaker's job title"], False)
-    state = encode(state_encoder, data['state'], False)
-    party = encode(party_encoder, data['party'], False)
-    context = handleContext(data['context'])
-    swc = data['subjectiveWordsCount']
-    # btc = data['barely true counts']
-    # fc = data['false counts']
-    # htc = data['half true counts']
-    # mtc = data['mostly true counts']
-    # potc = data['pants on fire counts']
-    # polarity = data['polarity']
-
-    label = encode(label_encoder, data['label'], True)
-    subjectivity = encode(subj_encoder, data['subjectivity'], True)
-
-    # x1 = word2vecInput(data['statement'])
-    # x1 = tfidf(data['statement'])
-
-    # x1 = []
-    # for i in range(len(statement)):
-    #     x1.append(np.concatenate((statement[i], subject[i])))
-
-    # x1 = np.asarray(x1)
-    # print(x1[0:10])
-
-    x1 = statement
-
-    x2 = np.array(
-        list(map(list, zip(speaker, sjt, state, party, context))))
-    x2 = np.concatenate((subject, x2), axis=1)
-
-    y1 = label
-    y2 = subjectivity
-
-    return x1, x2, y1, y2
-
-
 def processPoliti(data):
     statement = tokenizeStatement(
         statement_tokenizer, data['statement'],)
@@ -270,8 +211,9 @@ def processPoliti(data):
 
     x1 = statement
     x2 = np.reshape(speaker, (-1, 1))
+    print('Speaker Length', max(speaker))
     # x2 = np.column_stack((speaker, polarity))
-    # x2 = np.column_stack((speaker, pplarity, tags))
+    # x2 = np.column_stack((speaker, polarity, tags))
     # try with these three
 
     y1 = label
