@@ -8,7 +8,7 @@ from nltk.corpus import stopwords
 from sklearn.utils import shuffle
 from subjectivity import applyToDF
 from collections import Counter
-from nltk.stem import WordNetLemmatizer, PorterStemmer
+from nltk.stem import WordNetLemmatizer, PorterStemmer, SnowballStemmer
 # nltk.download('stopwords')
 # nltk.download('tagsets')
 # nltk.download('wordnet')
@@ -22,6 +22,7 @@ pd.set_option('display.max_colwidth', None)
 w_tokenizer = nltk.tokenize.WhitespaceTokenizer()
 lemmatizer = WordNetLemmatizer()
 stemmer = PorterStemmer()
+# stemmer = SnowballStemmer("english")
 
 
 def punctuationRemoval(text):
@@ -70,25 +71,46 @@ def stem(text):
     return ' '.join([stemmer.stem(w) for w in w_tokenizer.tokenize(text)])
 
 
+def addTags(data):
+    # tags = set(['', 'CC', 'CD', 'DT', 'EX', 'FW', 'IN',
+    #             'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNP', 'NNPS', 'NNS', 'PDT', 'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 'WDT', 'WP', 'WP$', 'WRB'])
+    # should use df.apply?
+    # nltk.help.upenn_tagset()
+    for index, row in data.iterrows():
+        sentence = nltk.pos_tag(nltk.word_tokenize(str(row['statement'])))
+        count = Counter([j for i, j in sentence])
+        for tag in list(count):
+            data.at[index, tag] = count[tag]
+    data.fillna(0, inplace=True)
+    return data
+
+
 def cleanDataText(df):
     # remove number?
+    df = addTags(df)
     df['statement'] = df['statement'].str.lower()
-    df['statement'] = df['statement'].str.replace('-', ' ')
-    df['statement'] = df['statement'].apply(punctuationRemoval)
-    df['statement'] = df['statement'].apply(lambda x: ' '.join(
-        [word for word in x.split() if word not in (stop)]))  # remove stop words
+    df['statement'] = df['statement'].str.replace('.', '', regex=False)
+    print(df['statement'].iloc[1500:1510])
     df['statement'] = df['statement'].map(lambda x: re.sub(
         r'\W+', ' ', x))  # remove non-words character
+    print(df['statement'].iloc[1500:1510])
     df['statement'] = df['statement'].map(
         lambda x: re.sub(r'\d+', ' ', x))  # remove numbers
+    print(df['statement'].iloc[1500:1510])
     df['statement'] = df['statement'].map(
         lambda x: re.sub(r'\s+', ' ', x).strip())  # remove double space
+    print(df['statement'].iloc[1500:1510])
+    df['statement'] = df['statement'].apply(punctuationRemoval)
+    print(df['statement'].iloc[1500:1510])
+    df['statement'] = df['statement'].apply(lambda x: ' '.join(
+        [word for word in x.split() if word not in (stop)]))  # remove stop words
 
-    print(df['statement'].head(20))
+    print(df['statement'].iloc[1500:1510])
     df['statement'] = df['statement'].apply(lemmatize)
-    print(df['statement'].head(20))
+    print(df['statement'].iloc[1500:1510])
     # df['statement'] = df['statement'].apply(stem)
-    # print(df['statement'].head(20))
+    # print(df['statement'].iloc[1500:1510])
+    # print(a)
     df = simplifyLabel(df)
     # df = handleNaN(df)
     return df
@@ -202,33 +224,12 @@ def mergePolitifact():
     data.to_csv('./cleanDatasets/merged_politifact.csv', index=False)
 
 
-# def addTags(row)
-
-def addTags():
-    data = pd.read_csv(
-        './cleanDatasets/merged_politifact.csv').reset_index(drop=True)
-    # tags = set(['', 'CC', 'CD', 'DT', 'EX', 'FW', 'IN',
-    #             'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNP', 'NNPS', 'NNS', 'PDT', 'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 'WDT', 'WP', 'WP$', 'WRB'])
-    # should use df.apply?
-    # nltk.help.upenn_tagset()
-    for index, row in data.iterrows():
-        sentence = nltk.pos_tag(nltk.word_tokenize(str(row['statement'])))
-        count = Counter([j for i, j in sentence])
-        for tag in list(count):
-            data.at[index, tag] = count[tag]
-    data.fillna(0, inplace=True)
-    print(data.shape)
-    data.to_csv(
-        './cleanDatasets/clean_merged_politifact_tagged.csv', index=False)
-
-
 def main():
     # inplace true?
     # initLiarData()
     # initPolitifact()
     # mergePolitifact()
     initMergedPolitifact()
-    # addTags()
     # initFakeNewsNet()
 
 

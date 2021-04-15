@@ -210,10 +210,11 @@ def processPoliti(data):
     #     json.dump(subj_dict, f)
 
     x1 = statement
-    x2 = np.reshape(speaker, (-1, 1))
+    x2 = np.reshape(speaker, (-1, 1))  # 0.36
     print('Speaker Length', max(speaker))
     # x2 = np.column_stack((speaker, polarity))
-    # x2 = np.column_stack((speaker, polarity, tags))
+    # x2 = np.column_stack((speaker, polarity, tags)) # 0.35
+    # x2 = tags # 0.34
     # try with these three
 
     y1 = label

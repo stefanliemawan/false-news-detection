@@ -51,12 +51,13 @@ def plot(history):
 
 
 def train(data, processFunction, createModelFunction, createEmbeddingFunction, num_epoch):
-    data = shuffle(data)
+    # data = shuffle(data)
     emb_matrix = createEmbeddingFunction(data['statement'])
     print('Embedding Matrix Shape', emb_matrix.shape)
 
     x1, x2, y1, y2 = processFunction(data)
-    x2 = normalize(x2)
+
+    # x2 = normalize(x2)
 
     n_output1 = y1.shape[1]
     n_output2 = y2.shape[1]
