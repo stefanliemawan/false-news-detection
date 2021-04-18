@@ -17,12 +17,11 @@ from train import train
 
 
 # https://www.kaggle.com/hamishdickson/cnn-for-sentence-classification-by-yoon-kim
-def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
-    embedding_dim = 300
-    num_filters = 100
+def politiModel(x1_shape, x2_shape, statement_vocab, metadata_vocab, n_output1, n_output2, emb_matrix):
+    num_filters = 128
     x1 = Input(shape=(x1_shape[1], ), name="input_1")
     emb1_1 = Embedding(
-        emb_matrix.shape[0], emb_matrix.shape[1], weights=[emb_matrix], trainable=True, name="embedding_1_1")(x1)
+        statement_vocab, emb_matrix.shape[1], weights=[emb_matrix], trainable=True, name="embedding_1_1")(x1)
 
     cnn1_1 = Conv1D(num_filters, 3,
                     activation="relu", name="conv1d_1_1")(emb1_1)
@@ -43,13 +42,10 @@ def politiModel(x1_shape, x2_shape, n_output1, n_output2, emb_matrix):
 
     # max x2 4500
     x2 = Input(shape=(x2_shape[1], ), name="input_2")
-    emb2_1 = Embedding(4479, 100, trainable=True, name="embedding_2_1")(x2)
-    bilstm2_1 = Bidirectional(LSTM(64, name="bilstm2_1"))(emb2_1)
-    drop2_1 = Dropout(0.5, name="dropout_2_1")(bilstm2_1)
-
-    # for tags only
-    # dense2_1 = Dense(128, activation="relu")(x2)
-    # drop2_1 = Dropout(0.5, name="dropout2_1")(dense2_1)
+    emb2_1 = Embedding(metadata_vocab, 100, trainable=True,
+                       name="embedding_2_1")(x2)
+    lstm2_1 = LSTM(128, name="lstm2_1")(emb2_1)
+    drop2_1 = Dropout(0.5, name="dropout_2_1")(lstm2_1)
 
     x = concatenate([drop1_1, drop2_1])
     # x = concatenate([flat1_1, dense2_1])
@@ -76,7 +72,7 @@ def main():
     print(data['label'].value_counts())
     print(data['subjectivity'].value_counts())
 
-    num_epoch = 30
+    num_epoch = 10
     train(data, processPoliti, politiModel, word2vecMatrix, num_epoch)
 
 

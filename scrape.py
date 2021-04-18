@@ -4,95 +4,140 @@ import pandas as pd
 import requests
 import urllib.request
 import time
+import re
 
-speakers = []
-dates = []
-platforms = []
-checkers = []
-statements = []
 labels = []
+statements = []
+subjects = []
+speakers = []
+# sjts = []  # speaker"s job title
+# states = []
+# parties = []
+t_counts = []
+mt_counts = []
+ht_counts = []
+mf_counts = []
+f_counts = []
+pf_counts = []
+contexts = []
+dates = []
+
+politifact_url = "https://politifact.com/"
+
+
+def scrape_speaker(url):
+    webpage = requests.get(politifact_url + url)
+    soup = BeautifulSoup(webpage.text, "html.parser")
+
+    scorecard_checks = soup.find_all(
+        "p", attrs={"class": "m-scorecard__checks"})
+    checks = [i.text.strip()[0] for i in scorecard_checks]
+    t_counts.append(checks[0])
+    mt_counts.append(checks[1])
+    ht_counts.append(checks[2])
+    mf_counts.append(checks[3])
+    f_counts.append(checks[4])
+    pf_counts.append(checks[5])
+
+
+def scrape_statement(url):
+    webpage = requests.get(politifact_url + url)
+    soup = BeautifulSoup(webpage.text, "html.parser")
+
+    statement_meta = soup.find(
+        "div", attrs={"class": "m-statement__meta"})
+    statement_desc = soup.find("div", attrs={"class": "m-statement__desc"})
+    statement_quote = soup.find(
+        "div", attrs={"class": "m-statement__quote"})
+    statement_item = soup.find_all(
+        "li", attrs={"class": "m-list__item"})
+    statement_meter = soup.find("div", attrs={"class": "m-statement__meter"})
+
+    speaker = statement_meta.find("a").text.strip()
+    speakers.append(speaker)
+
+    desc = statement_desc.text.strip().split()
+    date = " ".join(desc[2:5])
+    dates.append(date)
+
+    context = desc[6:]
+    if context:
+        context[-1] = context[-1][:-1]
+        context = " ".join(context)
+        contexts.append(context)
+    else:
+        contexts.append(None)
+
+    statement = statement_quote.text.strip()
+    statements.append(statement)
+
+    subject = [i.text.strip() for i in statement_item]
+    subject.pop(-1)
+    subject = " ".join(subject)
+    subjects.append(subject)
+
+    a_tags = [i.find('a', href=True) for i in statement_item]
+    speaker_url = re.findall(
+        "href=[\"\'](.*?)[\"\']", str(a_tags[-1]))[0]
+    scrape_speaker(speaker_url)
+
+    label = statement_meter.find(
+        "div", attrs={"class": "c-image"}).find("img").get("alt")
+    labels.append(label)
 
 
 def scrape_website(page_number):
     page_num = str(page_number)
-    URL = 'https://www.politifact.com/factchecks/list/?page=' + \
+    URL = politifact_url + "/factchecks/list/?page=" + \
         page_num
     webpage = requests.get(URL)
     soup = BeautifulSoup(webpage.text, "html.parser")
 
-    statement_meta = soup.find_all(
-        'div', attrs={'class': 'm-statement__meta'})
-    statement_desc = soup.find_all('div', attrs={'class': 'm-statement__desc'})
-    statement_quote = soup.find_all(
-        'div', attrs={'class': 'm-statement__quote'})
-    statement_footer = soup.find_all(
-        'footer', attrs={'class': 'm-statement__footer'})
-    label = soup.find_all('div', attrs={'class': 'm-statement__meter'})
-
-    for i in statement_meta:
-        link_meta = i.find_all('a')  # Source
-        source_text = link_meta[0].text.strip()
-        speakers.append(source_text)
-
-    for i in statement_desc:
-        link_desc = i.text.strip()
-        desc = link_desc.split()
-
-        month = desc[2]
-        day = desc[3]
-        year = desc[4]
-        date = month+' '+day+' '+year
-        dates.append(date)
-
-        platform = desc[6:]
-        if platform:
-            platform[-1] = platform[-1][:-1]
-        platform = " ".join(platform)
-        platforms.append(platform)
-
-    for i in statement_footer:
-        link_footer = i.text.strip()
-        name_and_date = link_footer.split()
-        first_name = name_and_date[1]
-        last_name = name_and_date[2]
-        checker = first_name+' '+last_name
-        checkers.append(checker)
-
-    for i in statement_quote:
-        link_quote = i.find_all('a')
-        statement = link_quote[0].text.strip()
-        statements.append(statement)
-
-    for i in label:
-        fact = i.find('div', attrs={'class': 'c-image'}).find('img').get('alt')
-        labels.append(fact)
+    div_tags = soup.find_all(
+        "div", attrs={"class": "m-statement__quote"})
+    for i in div_tags:
+        a_tags = i.find_all("a", href=True)
+        url = re.findall(
+            "href=[\"\'](.*?)[\"\']", str(a_tags[0]))[0]
+        scrape_statement(url)
 
 
 def save(filename):
     data = pd.DataFrame(
-        columns=['checker',  'statement', 'speaker', 'date', 'label'])
-    data['checker'] = checkers
-    data['statement'] = statements
-    data['speaker'] = speakers
-    data['date'] = dates
-    data['label'] = labels
+        columns=["label", "statement", "subject", "speaker", "speaker's job title", "state", "party", "true counts", "mostly true counts", "half true counts", "mostly false counts", "false counts", "pants on fire counts", "context", "date"])
+    data["label"] = labels
+    data["statement"] = statements
+    data["subject"] = subjects
+    data["speaker"] = speakers
+    # data["speaker's job title"] = sjts
+    # data["state"] = states
+    # data["party"] = parties
+    data["true counts"] = t_counts
+    data["mostly true counts"] = mt_counts
+    data["half true counts"] = ht_counts
+    data["mostly false counts"] = mf_counts
+    data["false counts"] = f_counts
+    data["pants on fire counts"] = pf_counts
+    data["context"] = contexts
+    data["date"] = dates
 
     print(data)
+    print(data.shape)
     print("Data saved to %s.csv" % filename)
 
-    data.to_csv('datasets/PolitiFact/%s.csv' % filename)
+    data.to_csv("datasets/PolitiFact/%s.csv" % filename)
 
 
 start = time.time()
 
-n = 641
+n = 648
 for i in range(1, n+1):
-    print("Processing Page ", i)
+    print("Processing Page ", i, "...")
     scrape_website(i)
-    if i % 100 == 0:
+    if i % 50 == 0:
         save("temp")
 
-save("641pages")
+save("648pages_politifact")
 
 
 end = time.time()

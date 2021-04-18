@@ -59,6 +59,9 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
 
     # x2 = normalize(x2)
 
+    statement_vocab = emb_matrix.shape[0]
+    metadata_vocab = int(np.max(x2)+1)
+
     n_output1 = y1.shape[1]
     n_output2 = y2.shape[1]
 
@@ -86,7 +89,7 @@ def train(data, processFunction, createModelFunction, createEmbeddingFunction, n
     print('y_val2 Shape', y_val2.shape)
 
     model = createModelFunction(
-        x_train1.shape, x_train2.shape, n_output1, n_output2, emb_matrix)
+        x_train1.shape, x_train2.shape, statement_vocab, metadata_vocab, n_output1, n_output2, emb_matrix)
     model.summary()
 
     model.compile(loss=loss_function,
