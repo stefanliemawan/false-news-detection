@@ -18,7 +18,7 @@ from train import train
 
 # https://www.kaggle.com/hamishdickson/cnn-for-sentence-classification-by-yoon-kim
 def politiModel(x1_shape, x2_shape, statement_vocab, metadata_vocab, n_output1, n_output2, emb_matrix):
-    num_filters = 128
+    num_filters = 300
     x1 = Input(shape=(x1_shape[1], ), name="input_1")
     emb1_1 = Embedding(
         statement_vocab, emb_matrix.shape[1], weights=[emb_matrix], trainable=True, name="embedding_1_1")(x1)
@@ -44,7 +44,7 @@ def politiModel(x1_shape, x2_shape, statement_vocab, metadata_vocab, n_output1, 
     x2 = Input(shape=(x2_shape[1], ), name="input_2")
     emb2_1 = Embedding(metadata_vocab, 100, trainable=True,
                        name="embedding_2_1")(x2)
-    lstm2_1 = LSTM(128, name="lstm2_1")(emb2_1)
+    lstm2_1 = LSTM(256, name="lstm2_1")(emb2_1)
     drop2_1 = Dropout(0.5, name="dropout_2_1")(lstm2_1)
 
     x = concatenate([drop1_1, drop2_1])
@@ -72,7 +72,7 @@ def main():
     print(data['label'].value_counts())
     print(data['subjectivity'].value_counts())
 
-    num_epoch = 10
+    num_epoch = 20
     train(data, processPoliti, politiModel, word2vecMatrix, num_epoch)
 
 

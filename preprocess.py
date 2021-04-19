@@ -4,6 +4,7 @@ import pandas as pd
 import string
 import nltk
 import re
+import numpy as np
 from nltk.corpus import stopwords
 from sklearn.utils import shuffle
 from subjectivity import applyToDF
@@ -31,35 +32,29 @@ def punctuationRemoval(text):
     return clean_str
 
 
-def simplifyLabel(df):
-    df.loc[df.label == "true", "label"] = "TRUE"
-    df.loc[df.label == "mostly-true", "label"] = "MOSTLY-TRUE"
-    df.loc[df.label == "half-true", "label"] = "HALF-TRUE"
-    df.loc[df.label == "barely-true", "label"] = "MOSTLY-FALSE"
-    df.loc[df.label == "false", "label"] = "FALSE"
-    df.loc[df.label == "pants-fire", "label"] = "PANTS-FIRE"
+def simplifyLabel(data):
+    data.loc[data.label == "true", "label"] = "TRUE"
+    data.loc[data.label == "mostly-true", "label"] = "MOSTLY-TRUE"
+    data.loc[data.label == "half-true", "label"] = "HALF-TRUE"
+    data.loc[data.label == "barely-true", "label"] = "MOSTLY-FALSE"
+    data.loc[data.label == "false", "label"] = "FALSE"
+    data.loc[data.label == "pants-fire", "label"] = "PANTS-FIRE"
 
-    # df.loc[df.label == "true", "label"] = "TRUE"
-    # df.loc[df.label == "mostly-true", "label"] = "TRUE"
-    # df.loc[df.label == "half-true", "label"] = "HALF-TRUE"
-    # df.loc[df.label == "barely-true", "label"] = "HALF-TRUE"
-    # df.loc[df.label == "pants-fire", "label"] = "FALSE"
-    # df.loc[df.label == "false", "label"] = "FALSE"
-    return df
-
-
-def handleNaN(df):
-    for header in df.columns.values:
-        df[header] = df[header].fillna(
-            df[header][df[header].first_valid_index()])
-    # df = df.interpolate(method="linear", limit_direction="forward", axis=0)
-    return df
+    # data.loc[data.label == "true", "label"] = "TRUE"
+    # data.loc[data.label == "mostly-true", "label"] = "TRUE"
+    # data.loc[data.label == "half-true", "label"] = "HALF-TRUE"
+    # data.loc[data.label == "barely-true", "label"] = "HALF-TRUE"
+    # data.loc[data.label == "pants-fire", "label"] = "FALSE"
+    # data.loc[data.label == "false", "label"] = "FALSE"
+    return data
 
 
-def renameLiarColumn(df):
-    df.rename(columns={"barely true counts": "barelyTrueCounts",
-                       "false counts": "falseCounts", "half true counts": "halfTrueCounts", "mostly true counts": "mostlyTrueCounts", "pants on fire counts": "pantsOnFireCounts"})
-    return df
+def handleNaN(data):
+    for header in data.columns.values:
+        data[header] = data[header].fillna(
+            data[header][data[header].first_valid_index()])
+    # data = data.interpolate(method="linear", limit_direction="forward", axis=0)
+    return data
 
 
 def lemmatize(text):
@@ -73,7 +68,7 @@ def stem(text):
 def addTags(data):
     # tags = set(["", "CC", "CD", "DT", "EX", "FW", "IN",
     #             "JJ", "JJR", "JJS", "LS", "MD", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB"])
-    # should use df.apply?
+    # should use data.apply?
     # nltk.help.upenn_tagset()
     for index, row in data.iterrows():
         sentence = nltk.pos_tag(nltk.word_tokenize(str(row["statement"])))
@@ -84,36 +79,148 @@ def addTags(data):
     return data
 
 
-def cleanDataText(df):
-    # df = addTags(df)
-    df["statement"] = df["statement"].str.lower()
-    df["statement"] = df["statement"].str.replace(".", "", regex=False)
-    df["statement"] = df["statement"].str.replace("â€™", " ", regex=False)
-    df["statement"] = df["statement"].str.replace("'", " ", regex=False)
-    print(df["statement"].iloc[1500:1510])
-    df["statement"] = df["statement"].map(lambda x: re.sub(
+def cleanContractions(data):
+    # for LIAR
+    # nt
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bisnt\b", "isn't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\barent\b", "aren't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bwasnt\b", "wasn't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bwerent\b", "weren't", x))
+
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bcant\b", "can't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bcouldnt\b", "could't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bshouldnt\b", "shouldn't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bwouldnt\b", "wouldn't", x))
+
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bhasnt\b", "hasn't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bhadnt\b", "hadn't", x))
+
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bdoesnt\b", "doesn't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bdont\b", "don't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bdidnt\b", "didn't", x))
+
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bmustnt\b", "mustn't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bwont\b", "won't", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bshant\b", "shan't", x))
+    # 're
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bim\b", "i'm", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\byoure\b", "you're", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\btheyre\b", "they're", x))
+    # ll
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\byoull\b", "you'll", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\btheyll\b", "they'll", x))
+    # ve
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\byouve\b", "you've", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bive\b", "i've", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bweve\b", "we've", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\btheyve\b", "they've", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bcouldve\b", "could've", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bshouldve\b", "should've", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bwouldve\b", "would've", x))
+    # s
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bshes\b", "she's", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bhes\b", "he's", x))
+    # d
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\byoud\b", "you'd", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bhed\b", "he'd", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bthad\b", "that'd", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\btheyd\b", "they'd", x))
+    data["statement"] = data["statement"].map(
+        lambda x: re.sub(r"\bwed\b", "we'd", x))
+    return data
+
+
+def cleanDataText(data):
+    # data = addTags(data)
+    data["statement"] = data["statement"].str.lower()
+    data = cleanContractions(data)
+    data["statement"] = data["statement"].str.replace(".", "", regex=False)
+    data["statement"] = data["statement"].str.replace("â€™", " ", regex=False)
+    data["statement"] = data["statement"].str.replace("'", " ", regex=False)
+    print(data["statement"].iloc[1500:1510])
+    data["statement"] = data["statement"].map(lambda x: re.sub(
         r"\W+", " ", x))  # remove non-words character
-    print(df["statement"].iloc[1500:1510])
-    df["statement"] = df["statement"].map(
+    print(data["statement"].iloc[1500:1510])
+    data["statement"] = data["statement"].map(
         lambda x: re.sub(r"\d+", " ", x))  # remove numbers
-    print(df["statement"].iloc[1500:1510])
-    df["statement"] = df["statement"].map(
+    print(data["statement"].iloc[1500:1510])
+    data["statement"] = data["statement"].map(
         lambda x: re.sub(r"\s+", " ", x).strip())  # remove double space
-    print(df["statement"].iloc[1500:1510])
-    df["statement"] = df["statement"].apply(punctuationRemoval)
-    print(df["statement"].iloc[1500:1510])
-    df["statement"] = df["statement"].apply(lambda x: " ".join(
+    print(data["statement"].iloc[1500:1510])
+    data["statement"] = data["statement"].apply(punctuationRemoval)
+    print(data["statement"].iloc[1500:1510])
+    data["statement"] = data["statement"].apply(lambda x: " ".join(
         [word for word in x.split() if word not in (stop)]))  # remove stop words
 
-    print(df["statement"].iloc[1500:1510])
-    df["statement"] = df["statement"].apply(lemmatize)
-    print(df["statement"].iloc[1500:1510])
-    # df["statement"] = df["statement"].apply(stem)
-    # print(df["statement"].iloc[1500:1510])
+    print(data["statement"].iloc[1500:1510])
+    data["statement"] = data["statement"].apply(lemmatize)
+    print(data["statement"].iloc[1500:1510])
+    # data["statement"] = data["statement"].apply(stem)
+    # print(data["statement"].iloc[1500:1510])
     # print(a)
-    df = simplifyLabel(df)
-    # df = handleNaN(df)
-    return df
+    data = simplifyLabel(data)
+    # data = handleNaN(data)
+    return data
+
+
+def mergePolitifact():
+    liar_train = pd.read_csv(
+        "./datasets/LIAR/liar_train_labeled.csv").reset_index(drop=True)
+    liar_test = pd.read_csv(
+        "./datasets/LIAR/liar_test_labeled.csv").reset_index(drop=True)
+    liar_val = pd.read_csv(
+        "./datasets/LIAR/liar_valid_labeled.csv").reset_index(drop=True)
+    politi = pd.read_csv(
+        "./datasets/PolitiFact/politifact.csv").reset_index(drop=True)
+    liar = pd.concat([liar_train, liar_test, liar_val])
+    liar.rename(
+        columns={"barely true counts": "mostly false counts"}, inplace=True)
+    data = pd.DataFrame(
+        columns=["label", "statement", "subject", "speaker", "speaker's job title", "state", "party", "true counts", "mostly true counts", "half true counts", "mostly false counts", "false counts", "pants on fire counts", "context"])
+    data = pd.concat([data, liar, politi], ignore_index=True)
+    data.drop_duplicates(subset="statement", keep='last', inplace=True)
+    data.reset_index(drop=True, inplace=True)
+    # data.drop(["id", "speaker's job title", "true counts",
+    #            "state", "party", "date", "Unnamed: 0"], axis=1, inplace=True)
+    data.drop(["id", "date", "Unnamed: 0"], axis=1, inplace=True)
+    print(data)
+    print(data.columns.values)
+    print(data.shape)
+    data.to_csv("./datasets/merged_politifact.csv", index=False)
 
 
 def initMergedPolitifact():
@@ -128,10 +235,10 @@ def initMergedPolitifact():
     data = data[data["label"] != "full-flop"]
     data = data[data["label"] != "half-flip"]
     data = data[data["label"] != "no-flip"]
-    data.drop_duplicates(subset="statement", inplace=True)
-    # print(data.isna().sum().sum())
+    data.drop_duplicates(subset="statement", keep='last', inplace=True)
     # 312 row with NaN
-    data.dropna(inplace=True)
+    # data.dropna(inplace=True)
+    # print(data.isna().sum().sum())
     print(data)
     print(data.shape)
 
@@ -139,7 +246,31 @@ def initMergedPolitifact():
     print(data["subjectivity"].value_counts())
 
     data.to_csv("./cleanDatasets/clean_merged_politifact.csv", index=False)
-    # data.to_csv("./cleanDatasets/clean_merged_politifact_stemmed.csv", index=False)
+
+
+def speaker2credit():
+    s2c = pd.read_table(
+        "./datasets/speaker2credit/s2c.tsv").reset_index(drop=True)
+    s2c.rename(
+        columns={"speakers_job": "speaker's job title", "state_info": "state", "party_affiliation": "party", "barely_true_cnt": "mostly false counts", "false_cnt": "false counts",  "half_true_cnt": "half true counts", "mostly_true_cnt": "mostly true counts", "pants_on_fire_cnt": "pants on fire counts", "true_cnt": "true counts"}, inplace=True)
+    s2c.sort_values(by="speaker", inplace=True)
+    s2c.to_csv(
+        "./datasets/speaker2credit/s2c.csv", index=False)
+
+
+def fillMissingMetadata():  # with speaker2credit
+    data = pd.read_csv(
+        "./cleanDatasets/clean_merged_politifact.csv").reset_index(drop=True)
+    s2c = pd.read_csv(
+        "./datasets/speaker2credit/s2c.csv").reset_index(drop=True)
+    data = pd.concat([pd.concat([data, s2c])])
+    data.sort_values(by=["speaker", "speaker's job title",
+                         "state", "party", "true counts", "mostly true counts",	"half true counts",	"mostly false counts", "false counts", "pants on fire counts"], inplace=True)
+    data = data.groupby(["speaker"], as_index=False).apply(
+        lambda group: group.ffill())
+    data.dropna(subset=["statement"], inplace=True)
+    data.to_csv(
+        "./cleanDatasets/clean_merged_politifact+s2c.csv", index=False)
 
 
 def initFakeNewsNet():
@@ -167,36 +298,27 @@ def initFakeNewsNet():
     gossip.to_csv("./cleanDatasets/FNN_gossip.csv", index=False)
 
 
-def mergePolitifact():
-    liar_train = pd.read_csv(
-        "./datasets/LIAR/liar_train_labeled.csv").reset_index(drop=True)
-    liar_test = pd.read_csv(
-        "./datasets/LIAR/liar_test_labeled.csv").reset_index(drop=True)
-    liar_val = pd.read_csv(
-        "./datasets/LIAR/liar_valid_labeled.csv").reset_index(drop=True)
-    politi = pd.read_csv(
-        "./datasets/PolitiFact/politifact.csv").reset_index(drop=True)
-    liar = pd.concat([liar_train, liar_test, liar_val])
-    liar.rename(
-        columns={"barely true counts": "mostly false counts"}, inplace=True)
-    data = pd.concat([liar, politi], ignore_index=True)
-    data.drop_duplicates(subset="statement", inplace=True)
-    data.reset_index(drop=True, inplace=True)
-    data.drop(["id", "speaker's job title", "true counts",
-               "state", "party", "date", "Unnamed: 0"], axis=1, inplace=True)
-    print(data)
-    print(data.columns.values)
-    print(data.shape)
-    print(data["statement"].iloc[1500:1510])
-    data.to_csv("./datasets/merged_politifact.csv", index=False)
-
-
 def main():
-    # initLiarData()
-    # initPolitifact()
     # mergePolitifact()
-    initMergedPolitifact()
+    # initMergedPolitifact()
+    # speaker2credit()
+    # fillMissingMetadata()
     # initFakeNewsNet()
+
+    data = pd.read_csv(
+        "./cleanDatasets/clean_merged_politifact+s2c_edited.csv").reset_index(drop=True)
+    # data.sort_values(by=["speaker", "speaker's job title",
+    #                      "state", "party", "true counts", "mostly true counts",	"half true counts",	"mostly false counts", "false counts", "pants on fire counts"], inplace=True)
+    # data[["speaker's job title", "state", "party", "true counts", "mostly true counts", "half true counts",	"mostly false counts", "false counts", "pants on fire counts"]] = data[["speaker's job title", "state", "party", "true counts", "mostly true counts", "half true counts",	"mostly false counts", "false counts", "pants on fire counts"]].mask(
+    #     data["speaker"].duplicated()).ffill()
+    data[["speaker's job title", "state", "party", "true counts", "mostly true counts",
+          "half true counts",	"mostly false counts", "false counts", "pants on fire counts"]].ffill()
+    print(data[["speaker", "speaker's job title"]].iloc[19060:19080])
+    # data = data.iloc[data.groupby('speaker').speaker.transform(
+    #     'size').argsort(kind='mergesort')]
+    print(data.isna().sum())
+    data.to_csv(
+        "./cleanDatasets/clean_merged_politifact+s2c_edited.csv", index=False)
 
 
 main()

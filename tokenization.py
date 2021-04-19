@@ -15,7 +15,7 @@ from gensim.models.word2vec import Word2Vec
 # Tokenize
 # https://medium.com/@sthacruz/fake-news-classification-using-glove-and-long-short-term-memory-lstm-a48f1dd605ab
 
-statement_tokenizer = Tokenizer(num_words=12000)
+statement_tokenizer = Tokenizer(num_words=10000)
 subject_tokenizer = Tokenizer()
 
 context_encoder = LabelEncoder()
