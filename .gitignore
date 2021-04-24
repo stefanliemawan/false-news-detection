@@ -6,4 +6,5 @@ word2vec/
 fasttext/
 prediction/
 models/
+graphs/
 __pycache__/
