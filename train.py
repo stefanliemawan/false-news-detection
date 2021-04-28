@@ -100,9 +100,10 @@ def trainLiar(liar_train, liar_test, liar_val, processFunction, createModelFunct
     liar_test = shuffle(liar_test)
     liar_val = shuffle(liar_val)
 
-    x_train1, x_train2, y_train1, y_train2 = processFunction(liar_train)
-    x_test1, x_test2, y_test1, y_test2 = processFunction(liar_test)
-    x_val1, x_val2, y_val1, y_val2 = processFunction(liar_val)
+    x_train1, x_train2, x_train3, y_train1, y_train2 = processFunction(
+        liar_train)
+    x_test1, x_test2, x_test3, y_test1, y_test2 = processFunction(liar_test)
+    x_val1, x_val2, x_val3, y_val1, y_val2 = processFunction(liar_val)
 
     emb_matrix = createEmbeddingFunction(liar_train["statement"])
     print("Embedding Matrix Shape", emb_matrix.shape)

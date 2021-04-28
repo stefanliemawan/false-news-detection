@@ -221,7 +221,7 @@ def processPoliti(data):
     context = encode(context_encoder, data["context"], False)
     date = handleDate(data['date'])
     speaker = encode(speaker_encoder, data["speaker"], False)
-    # polarity = np.array(data["polarity"]).astype(int)
+    polarity = np.array(data["polarity"]).astype(int)
 
     sjt = encode(sjt_encoder, data["speaker's job title"], False)
     state = encode(state_encoder, data["state"], False)

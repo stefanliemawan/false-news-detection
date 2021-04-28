@@ -301,8 +301,28 @@ def fillMissingMetadata():
 
     data = data.merge(profiles, how="left", on="speaker", suffixes=("", "_y"))
 
+    data["speaker's job title"].fillna(
+        data["speaker's job title_y"], inplace=True)
+    data.drop(["speaker's job title_y"], axis=1, inplace=True)
+    data["state"].fillna(data["state_y"], inplace=True)
+    data.drop(["state_y"], axis=1, inplace=True)
     data["party"].fillna(data["party_y"], inplace=True)
     data.drop(["party_y"], axis=1, inplace=True)
+    data["true counts"].fillna(data["true counts_y"], inplace=True)
+    data.drop(["true counts_y"], axis=1, inplace=True)
+    data["mostly true counts"].fillna(
+        data["mostly true counts_y"], inplace=True)
+    data.drop(["mostly true counts_y"], axis=1, inplace=True)
+    data["half true counts"].fillna(data["half true counts_y"], inplace=True)
+    data.drop(["half true counts_y"], axis=1, inplace=True)
+    data["mostly false counts"].fillna(
+        data["mostly false counts_y"], inplace=True)
+    data.drop(["mostly false counts_y"], axis=1, inplace=True)
+    data["false counts"].fillna(data["false counts_y"], inplace=True)
+    data.drop(["false counts_y"], axis=1, inplace=True)
+    data["pants on fire counts"].fillna(
+        data["pants on fire counts_y"], inplace=True)
+    data.drop(["pants on fire counts_y"], axis=1, inplace=True)
     # fill with other columns
 
     data = data.groupby(["speaker"], as_index=False).apply(
