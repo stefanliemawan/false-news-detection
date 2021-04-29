@@ -10,6 +10,7 @@ from sklearn.utils import shuffle
 from subjectivity import applyToDF
 from collections import Counter
 from nltk.stem import WordNetLemmatizer, PorterStemmer, SnowballStemmer
+from sklearn.utils import shuffle
 # nltk.download("stopwords")
 # nltk.download("tagsets")
 # nltk.download("wordnet")
@@ -297,39 +298,44 @@ def fillMissingMetadata():
     #                      "state", "party", "true counts", "mostly true counts",	"half true counts",	"mostly false counts", "false counts", "pants on fire counts"], inplace=True)
     data.sort_values(by=["speaker"], inplace=True)
     # profiles.sort_values(by=["speaker"], inplace=True)
-    print(data[["speaker", "speaker's job title"]].iloc[:50])
+    data["speaker"] = data["speaker"].str.title()
+    profiles["speaker"] = profiles["speaker"].str.title()
 
-    data = data.merge(profiles, how="left", on="speaker", suffixes=("", "_y"))
+    data = data.merge(profiles, how="left", on="speaker", suffixes=("_x", ""))
 
     data["speaker's job title"].fillna(
-        data["speaker's job title_y"], inplace=True)
-    data.drop(["speaker's job title_y"], axis=1, inplace=True)
-    data["state"].fillna(data["state_y"], inplace=True)
-    data.drop(["state_y"], axis=1, inplace=True)
-    data["party"].fillna(data["party_y"], inplace=True)
-    data.drop(["party_y"], axis=1, inplace=True)
-    data["true counts"].fillna(data["true counts_y"], inplace=True)
-    data.drop(["true counts_y"], axis=1, inplace=True)
+        data["speaker's job title_x"], inplace=True)
+    data.drop(["speaker's job title_x"], axis=1, inplace=True)
+
+    data["state"].fillna(data["state_x"], inplace=True)
+    data.drop(["state_x"], axis=1, inplace=True)
+    data["party"].fillna(data["party_x"], inplace=True)
+    data.drop(["party_x"], axis=1, inplace=True)
+    data["true counts"].fillna(data["true counts_x"], inplace=True)
+    data.drop(["true counts_x"], axis=1, inplace=True)
     data["mostly true counts"].fillna(
-        data["mostly true counts_y"], inplace=True)
-    data.drop(["mostly true counts_y"], axis=1, inplace=True)
-    data["half true counts"].fillna(data["half true counts_y"], inplace=True)
-    data.drop(["half true counts_y"], axis=1, inplace=True)
+        data["mostly true counts_x"], inplace=True)
+    data.drop(["mostly true counts_x"], axis=1, inplace=True)
+    data["half true counts"].fillna(data["half true counts_x"], inplace=True)
+    data.drop(["half true counts_x"], axis=1, inplace=True)
     data["mostly false counts"].fillna(
-        data["mostly false counts_y"], inplace=True)
-    data.drop(["mostly false counts_y"], axis=1, inplace=True)
-    data["false counts"].fillna(data["false counts_y"], inplace=True)
-    data.drop(["false counts_y"], axis=1, inplace=True)
+        data["mostly false counts_x"], inplace=True)
+    data.drop(["mostly false counts_x"], axis=1, inplace=True)
+    data["false counts"].fillna(data["false counts_x"], inplace=True)
+    data.drop(["false counts_x"], axis=1, inplace=True)
     data["pants on fire counts"].fillna(
-        data["pants on fire counts_y"], inplace=True)
-    data.drop(["pants on fire counts_y"], axis=1, inplace=True)
+        data["pants on fire counts_x"], inplace=True)
+    data.drop(["pants on fire counts_x"], axis=1, inplace=True)
     # fill with other columns
 
     data = data.groupby(["speaker"], as_index=False).apply(
         lambda group: group.ffill())
     data.dropna(subset=["statement"], inplace=True)
 
+    print(data[["speaker", "speaker's job title"]].iloc[:50])
+
     print(data.columns.values)
+    data = shuffle(data)
 
     data.to_csv(
         "./cleanDatasets/clean_merged_politifact+.csv", index=False)
@@ -436,39 +442,45 @@ def initFakeNewsNet():
 
 
 def main():
-    # initLIAR()
-    # mergePolitifact()
-    # initMergedPolitifact()
-    # fillMissingMetadata()
+    initLIAR()
+    mergePolitifact()
+    initMergedPolitifact()
+    fillMissingMetadata()
 
     # speaker2credit()
     # fillProfilesWithLIARState()
     # fillMergedPolitiFactWithProfiles()
     # initFakeNewsNet()
 
-    profiles = pd.read_csv(
-        "./cleanDatasets/profiles.csv").reset_index(drop=True)
-    print(profiles.isna().sum())
-    print("")
+    # profiles = pd.read_csv(
+    #     "./cleanDatasets/profiles.csv").reset_index(drop=True)
+    # print(profiles.isna().sum())
+    # print("")
 
-    data = pd.read_csv(
-        "./cleanDatasets/clean_merged_politifact+_editeds.csv").reset_index(drop=True)
+    # data = pd.read_csv(
+    #     "./cleanDatasets/clean_merged_politifact+_editeds.csv").reset_index(drop=True)
 
-    cols = ["speaker's job title", "state", "party", "true counts", "mostly true counts",
-            "half true counts", "mostly false counts", "false counts", "pants on fire counts"]
-    data[cols] = data.groupby(
-        ["speaker"])[cols].transform('first')
-    data.drop_duplicates(subset="statement", inplace=True)
+    # cols = ["speaker's job title", "state", "party", "true counts", "mostly true counts",
+    #         "half true counts", "mostly false counts", "false counts", "pants on fire counts"]
+    # data[cols] = data.groupby(
+    #     ["speaker"])[cols].transform('first')
+    # data.drop_duplicates(subset="statement", inplace=True)
 
-    data["count"] = data.groupby(["speaker"])["speaker"].transform("count")
-    data.sort_values(by=["count", "speaker"], ascending=False, inplace=True)
-    print(data[["speaker", "count"]].head())
+    # data["count"] = data.groupby(["speaker"])["speaker"].transform("count")
+    # data.sort_values(by=["count", "speaker"], ascending=False, inplace=True)
+    # print(data[["speaker", "count"]].head())
 
-    print(data.isna().sum())
-    data.to_csv(
-        "./cleanDatasets/clean_merged_politifact+_editeds.csv", index=False)
+    # print(data.isna().sum())
+    # data.to_csv(
+    #     "./cleanDatasets/clean_merged_politifact+_editeds.csv", index=False)
 
     # clean subject as well?
+
+    # data = pd.read_csv(
+    #     "./cleanDatasets/clean_merged_politifact+_editeds.csv").reset_index(drop=True)
+    # data = shuffle(data)
+    # data.to_csv(
+    #     "./cleanDatasets/clean_merged_politifact+_editeds_shuffled.csv", index=False)
 
 
 main()

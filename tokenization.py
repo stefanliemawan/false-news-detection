@@ -137,7 +137,7 @@ def gloveMatrix(statements):
 def word2vecMatrix(statements):
     word_index = statement_tokenizer.word_index
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
-        "./word2vec/GoogleNews-vectors-negative300.bin", binary=True)
+        "./word2vec/GoogleNews-vectors-negative300.bin", limit=50000, binary=True)
     # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
@@ -185,14 +185,14 @@ def fasttextMatrix(statements):
 
 def processLiar(data):
     statement = tokenizeStatement(data["statement"],)
+
     subject = tokenizeSubject(data["subject"])
     speaker = encode(speaker_encoder, data["speaker"], False)
-    # polarity = np.array(data["polarity"]).astype(int)
-
     sjt = encode(sjt_encoder, data["speaker's job title"], False)
     state = encode(state_encoder, data["state"], False)
     party = encode(party_encoder, data["party"], False)
     context = encode(context_encoder, data["context"], False)
+    polarity = np.array(data["polarity"]).astype(int)
 
     mt_counts = np.array(data["mostly true counts"]).astype(int)
     ht_counts = np.array(data["half true counts"]).astype(int)
@@ -200,13 +200,15 @@ def processLiar(data):
     f_counts = np.array(data["false counts"]).astype(int)
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
     label = encode(label_encoder, data["label"], True)
-    subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
+    # subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
+    subjectivity = np.array(data["subjectivity"])
 
     x1 = statement
-    x2 = np.column_stack((subject, speaker, sjt, state, party, context))
+    x2 = np.column_stack(
+        (subject, speaker, sjt, state, party, context))
 
     x3 = np.column_stack((mt_counts,
-                          ht_counts, mf_counts, f_counts, pf_counts))
+                          ht_counts, mf_counts, f_counts, pf_counts, polarity))
 
     y1 = label
     y2 = subjectivity
@@ -218,14 +220,14 @@ def processPoliti(data):
     statement = tokenizeStatement(data["statement"])
 
     subject = tokenizeSubject(data["subject"])
-    context = encode(context_encoder, data["context"], False)
-    date = handleDate(data['date'])
     speaker = encode(speaker_encoder, data["speaker"], False)
-    polarity = np.array(data["polarity"]).astype(int)
-
     sjt = encode(sjt_encoder, data["speaker's job title"], False)
     state = encode(state_encoder, data["state"], False)
     party = encode(party_encoder, data["party"], False)
+    date = handleDate(data['date'])
+    context = encode(context_encoder, data["context"], False)
+    polarity = np.array(data["polarity"]).astype(int)
+    # subjectivity = np.array(data["subjectivity"])
 
     t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
@@ -235,18 +237,22 @@ def processPoliti(data):
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
 
     label = encode(label_encoder, data["label"], True)
-    subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
+    # subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
+    subjectivity = np.array(data["subjectivity"])
 
     # tags = np.array(
     #     data.drop(["statement", "subject", "speaker", "context", "polarity", "mostly true counts", "half true counts", "mostly false counts", "false counts", "pants on fire counts", "label", "subjectivity"], axis=1))
 
     x1 = statement
-    x2 = np.column_stack((subject, speaker, sjt, state,
-                          party, context, date))
+    x2 = np.column_stack((subject, speaker, sjt, state, party, context, date))
     x3 = np.column_stack((t_counts, mt_counts,
-                          ht_counts, mf_counts, f_counts, pf_counts))
+                          ht_counts, mf_counts, f_counts, pf_counts, polarity))
     # with or without sjt state
     # worst accuracy with sjt state?
+    # print(x1[0])
+    # print(x2[0])
+    # print(x3[0])
+    # print(a)
 
     y1 = label
     y2 = subjectivity

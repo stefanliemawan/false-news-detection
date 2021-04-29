@@ -162,7 +162,7 @@ def save(filename):
 start = time.time()
 
 n = 648
-first_page = 141
+first_page = 1
 for i in range(first_page, n+1):
     print("Processing Page ", i, "...")
     scrape_website(i)
