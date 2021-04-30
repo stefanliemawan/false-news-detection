@@ -64,8 +64,10 @@ def stem(text):
 
 
 def addTags(data):
-    # tags = set(["", "CC", "CD", "DT", "EX", "FW", "IN",
-    #             "JJ", "JJR", "JJS", "LS", "MD", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB"])
+    tags = sorted(set(["''", "CC", "CD", "DT", "EX", "FW", "IN",
+                       "JJ", "JJR", "JJS", "LS", "MD", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB"]))
+    for t in tags:
+        data[t] = 0
     # should use data.apply?
     # nltk.help.upenn_tagset()
     for index, row in data.iterrows():
@@ -74,6 +76,7 @@ def addTags(data):
         for tag in list(count):
             data.at[index, tag] = count[tag]
     data.fillna(0, inplace=True)
+    print(data.columns.values)
     return data
 
 
@@ -163,7 +166,6 @@ def cleanContractions(data):
 
 
 def cleanDataText(data):
-    # data = addTags(data)
     data["raw"] = data["statement"]
     data["statement"] = data["statement"].str.lower()
     data = cleanContractions(data)
@@ -192,6 +194,7 @@ def cleanDataText(data):
     # print(data["stemmed statement"].iloc[1500:1510])
     # print(a)
     data = simplifyLabel(data)
+    data = addTags(data)
     # data = handleNaN(data)
 
     data["speaker"] = data["speaker"].str.replace("-", " ", regex=False)

@@ -51,48 +51,58 @@ def plot(history):
     # plt.show()
 
 
-def train(x_train1, x_train2, x_train3, x_test1, x_test2, x_test3, x_val1, x_val2, x_val3, y_train1, y_test1, y_val1, y_train2, y_test2, y_val2, emb_matrix, createEmbeddingFunction, createModelFunction, num_epoch):
+def train(x_train1, x_train2, x_train3, x_train4,  x_test1, x_test2, x_test3, x_test4,  x_val1, x_val2, x_val3, x_val4, y_train1, y_test1, y_val1, y_train2, y_test2, y_val2, emb_matrix, createEmbeddingFunction, createModelFunction, num_epoch):
     statement_vocab = emb_matrix.shape[0]
     metadata_vocab = round(np.max(x_train2))+1
     print("Statement Vocab", statement_vocab)
     print("Metadata Vocab", metadata_vocab)
 
     n_output1 = y_train1.shape[1]
-    # n_output2 = y_train2.shape[1]
-    n_output2 = 1
+    n_output2 = y_train2.shape[1]
+    # n_output2 = 1
 
     print("x_train1 Shape", x_train1.shape)
     print("x_train2 Shape", x_train2.shape)
     print("x_train3 Shape", x_train3.shape)
-    print("y_train1 Shape", y_train1.shape)
-    print("y_train2 Shape", y_train2.shape)
+    print("x_train4 Shape", x_train4.shape)
+
     print("x_test1 Shape", x_test1.shape)
     print("x_test2 Shape", x_test2.shape)
     print("x_test3 Shape", x_test3.shape)
-    print("y_test1 Shape", y_test1.shape)
-    print("y_test2 Shape", y_test2.shape)
+    print("x_test4 Shape", x_test4.shape)
+
     print("x_val1 Shape", x_val1.shape)
     print("x_val2 Shape", x_val2.shape)
     print("x_val3 Shape", x_val3.shape)
+    print("x_val4 Shape", x_val4.shape)
+
+    print("y_train1 Shape", y_train1.shape)
+    print("y_train2 Shape", y_train2.shape)
+
+    print("y_test1 Shape", y_test1.shape)
+    print("y_test2 Shape", y_test2.shape)
+
     print("y_val1 Shape", y_val1.shape)
     print("y_val2 Shape", y_val2.shape)
 
     model = createModelFunction(
-        x_train1.shape, x_train2.shape, x_train3.shape, statement_vocab, metadata_vocab, n_output1, n_output2, emb_matrix)
+        x_train1.shape, x_train2.shape, x_train3.shape, x_train4.shape, statement_vocab, metadata_vocab, n_output1, n_output2, emb_matrix)
     model.summary()
 
-    model.compile(loss=[loss_classification, loss_regression],
+    model.compile(loss=loss_function,
                   optimizer=optimizer, metrics=["accuracy"])
 
     history = model.fit(
-        [x_train1, x_train2, x_train3], y_train1, epochs=num_epoch, validation_data=([x_val1, x_val2, x_val3], y_val1), batch_size=batch_size, verbose=1)
+        [x_train1, x_train2, x_train3, x_train4], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2, x_val3, x_val4], [y_val1, y_val2]), batch_size=batch_size, verbose=1)
 
     # cross validation?
 
     print("### EVALUATION ###")
-    model.evaluate([x_test1, x_test2, x_test3], y_test1, verbose=1)
-    model.evaluate([x_val1, x_val2, x_val3], y_val1, verbose=1)
-    # plot(history)
+    model.evaluate([x_test1, x_test2, x_test3, x_test4],
+                   [y_test1, y_test2], verbose=1)
+    model.evaluate([x_val1, x_val2, x_val3, x_val4],
+                   [y_val1, y_val2], verbose=1)
+    plot(history)
 
     # model.save("./models/10k-128kimcnn-100lstm-model1.h5")
 
@@ -102,15 +112,16 @@ def trainLiar(liar_train, liar_test, liar_val, processFunction, createModelFunct
     liar_test = shuffle(liar_test)
     liar_val = shuffle(liar_val)
 
-    x_train1, x_train2, x_train3, y_train1, y_train2 = processFunction(
+    x_train1, x_train2, x_train3, x_train4, y_train1, y_train2 = processFunction(
         liar_train)
-    x_test1, x_test2, x_test3, y_test1, y_test2 = processFunction(liar_test)
-    x_val1, x_val2, x_val3, y_val1, y_val2 = processFunction(liar_val)
+    x_test1, x_test2, x_test3, x_test4, y_test1, y_test2 = processFunction(
+        liar_test)
+    x_val1, x_val2, x_val3, x_val4, y_val1, y_val2 = processFunction(liar_val)
 
     emb_matrix = createEmbeddingFunction(liar_train["statement"])
     print("Embedding Matrix Shape", emb_matrix.shape)
 
-    train(x_train1, x_train2, x_train3,  x_test1, x_test2, x_test3,  x_val1, x_val2, x_val3, y_train1,
+    train(x_train1, x_train2, x_train3, x_train4,  x_test1, x_test2, x_test3, x_test4,  x_val1, x_val2, x_val3, x_val4, y_train1,
           y_test1, y_val1, y_train2, y_test2, y_val2, emb_matrix, createEmbeddingFunction, createModelFunction, num_epoch)
 
 
@@ -120,20 +131,23 @@ def trainPoliti(data, processFunction, createModelFunction, createEmbeddingFunct
     # dont shuffle before random state? not really, weird
 
     p_train, p_test = train_test_split(
-        data, test_size=0.1, random_state=None, shuffle=True, stratify=data["label"])
+        data, test_size=0.1, random_state=1, shuffle=True, stratify=data["label"])
     p_train, p_val = train_test_split(
-        data, test_size=0.1, random_state=None, shuffle=True, stratify=data["label"])
+        data, test_size=0.1, random_state=1, shuffle=True, stratify=data["label"])
 
-    x_train1, x_train2, x_train3, y_train1, y_train2 = processFunction(
+    x_train1, x_train2, x_train3, x_train4, y_train1, y_train2 = processFunction(
         p_train)
-    x_test1, x_test2, x_test3, y_test1, y_test2 = processFunction(p_test)
-    x_val1, x_val2, x_val3, y_val1, y_val2 = processFunction(p_val)
+    x_test1, x_test2, x_test3, x_test4, y_test1, y_test2 = processFunction(
+        p_test)
+    x_val1, x_val2, x_val3, x_val4, y_val1, y_val2 = processFunction(p_val)
 
-    # x_train3, x_test3, x_val3 = normalize(
-    #     x_train3), normalize(x_test3), normalize(x_val3)
+    x_train3, x_test3, x_val3 = normalize(
+        x_train3), normalize(x_test3), normalize(x_val3)
+    x_train4, x_test4, x_val4 = normalize(
+        x_train4), normalize(x_test4), normalize(x_val4)
 
     emb_matrix = createEmbeddingFunction(p_train["statement"])
     print("Embedding Matrix Shape", emb_matrix.shape)
 
-    train(x_train1, x_train2, x_train3,  x_test1, x_test2, x_test3,  x_val1, x_val2, x_val3, y_train1, y_test1,
+    train(x_train1, x_train2, x_train3, x_train4,  x_test1, x_test2, x_test3, x_test4,  x_val1, x_val2, x_val3, x_val4, y_train1, y_test1,
           y_val1, y_train2, y_test2, y_val2, emb_matrix, createEmbeddingFunction, createModelFunction, num_epoch)

@@ -200,20 +200,24 @@ def processLiar(data):
     f_counts = np.array(data["false counts"]).astype(int)
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
     label = encode(label_encoder, data["label"], True)
-    # subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
-    subjectivity = np.array(data["subjectivity"])
+    subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
+    # subjectivity = np.array(data["subjectivity"])
+
+    tags = np.array(data.loc[:, "''":"WRB"]).astype(int)
 
     x1 = statement
     x2 = np.column_stack(
         (subject, speaker, sjt, state, party, context))
 
     x3 = np.column_stack((mt_counts,
-                          ht_counts, mf_counts, f_counts, pf_counts, polarity))
+                          ht_counts, mf_counts, f_counts, pf_counts))
+
+    x4 = np.column_stack((polarity, tags))
 
     y1 = label
     y2 = subjectivity
 
-    return x1, x2, x3, y1, y2
+    return x1, x2, x3, x4, y1, y2
 
 
 def processPoliti(data):
@@ -227,7 +231,6 @@ def processPoliti(data):
     date = handleDate(data['date'])
     context = encode(context_encoder, data["context"], False)
     polarity = np.array(data["polarity"]).astype(int)
-    # subjectivity = np.array(data["subjectivity"])
 
     t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
@@ -237,16 +240,16 @@ def processPoliti(data):
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
 
     label = encode(label_encoder, data["label"], True)
-    # subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
-    subjectivity = np.array(data["subjectivity"])
+    subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
+    # subjectivity = np.array(data["subjectivity"])
 
-    # tags = np.array(
-    #     data.drop(["statement", "subject", "speaker", "context", "polarity", "mostly true counts", "half true counts", "mostly false counts", "false counts", "pants on fire counts", "label", "subjectivity"], axis=1))
+    tags = np.array(data.loc[:, "''":"WRB"]).astype(int)
 
     x1 = statement
     x2 = np.column_stack((subject, speaker, sjt, state, party, context, date))
     x3 = np.column_stack((t_counts, mt_counts,
-                          ht_counts, mf_counts, f_counts, pf_counts, polarity))
+                          ht_counts, mf_counts, f_counts, pf_counts))
+    x4 = np.column_stack((polarity, tags))
     # with or without sjt state
     # worst accuracy with sjt state?
     # print(x1[0])
@@ -257,4 +260,4 @@ def processPoliti(data):
     y1 = label
     y2 = subjectivity
 
-    return x1, x2, x3, y1, y2
+    return x1, x2, x3, x4, y1, y2
