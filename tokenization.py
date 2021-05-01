@@ -29,6 +29,7 @@ party_encoder = LabelEncoder()
 context_encoder = LabelEncoder()
 
 label_encoder = LabelEncoder()
+sentiment_encoder = LabelEncoder()
 subjectivity_encoder = LabelEncoder()
 
 statement_maxlen = 0
@@ -192,27 +193,27 @@ def processLiar(data):
     state = encode(state_encoder, data["state"], False)
     party = encode(party_encoder, data["party"], False)
     context = encode(context_encoder, data["context"], False)
-    polarity = np.array(data["polarity"]).astype(int)
 
     mt_counts = np.array(data["mostly true counts"]).astype(int)
     ht_counts = np.array(data["half true counts"]).astype(int)
     mf_counts = np.array(data["mostly false counts"]).astype(int)
     f_counts = np.array(data["false counts"]).astype(int)
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
+
+    polarity = np.array(data["polarity"]).astype(int)
+    sentiment = encode(sentiment_encoder, data["sentiment"], False)
+    tags = np.array(data.loc[:, "CC":"VBZ"]).astype(int)
+
     label = encode(label_encoder, data["label"], True)
     subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
-    # subjectivity = np.array(data["subjectivity"])
-
-    tags = np.array(data.loc[:, "''":"WRB"]).astype(int)
 
     x1 = statement
     x2 = np.column_stack(
         (subject, speaker, sjt, state, party, context))
-
     x3 = np.column_stack((mt_counts,
                           ht_counts, mf_counts, f_counts, pf_counts))
-
-    x4 = np.column_stack((polarity, tags))
+    x4 = np.column_stack((polarity, sentiment, tags))
+    # x4 = tags
 
     y1 = label
     y2 = subjectivity
@@ -230,7 +231,6 @@ def processPoliti(data):
     party = encode(party_encoder, data["party"], False)
     date = handleDate(data['date'])
     context = encode(context_encoder, data["context"], False)
-    polarity = np.array(data["polarity"]).astype(int)
 
     t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
@@ -239,23 +239,18 @@ def processPoliti(data):
     f_counts = np.array(data["false counts"]).astype(int)
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
 
+    polarity = np.array(data["polarity"]).astype(int)
+    sentiment = encode(sentiment_encoder, data["sentiment"], False)
+    tags = np.array(data.loc[:, "''":"WRB"]).astype(int)
+
     label = encode(label_encoder, data["label"], True)
     subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
-    # subjectivity = np.array(data["subjectivity"])
-
-    tags = np.array(data.loc[:, "''":"WRB"]).astype(int)
 
     x1 = statement
     x2 = np.column_stack((subject, speaker, sjt, state, party, context, date))
     x3 = np.column_stack((t_counts, mt_counts,
                           ht_counts, mf_counts, f_counts, pf_counts))
-    x4 = np.column_stack((polarity, tags))
-    # with or without sjt state
-    # worst accuracy with sjt state?
-    # print(x1[0])
-    # print(x2[0])
-    # print(x3[0])
-    # print(a)
+    x4 = np.column_stack((polarity, sentiment, tags))
 
     y1 = label
     y2 = subjectivity

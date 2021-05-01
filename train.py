@@ -20,9 +20,9 @@ optimizer = tf.keras.optimizers.Adam()
 # optimizer = tf.keras.optimizers.RMSprop()
 # optimizer = tf.keras.optimizers.Adadelta()
 # loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-loss_classification = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-loss_regression = tf.keras.losses.MeanAbsoluteError()
+loss_multiclass = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+loss_binary = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+# loss_regression = tf.keras.losses.MeanAbsoluteError()
 batch_size = 64
 
 
@@ -89,11 +89,14 @@ def train(x_train1, x_train2, x_train3, x_train4,  x_test1, x_test2, x_test3, x_
         x_train1.shape, x_train2.shape, x_train3.shape, x_train4.shape, statement_vocab, metadata_vocab, n_output1, n_output2, emb_matrix)
     model.summary()
 
-    model.compile(loss=loss_function,
+    model.compile(loss=loss_multiclass,
                   optimizer=optimizer, metrics=["accuracy"])
 
+    callback = tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', patience=3)  # 3
+
     history = model.fit(
-        [x_train1, x_train2, x_train3, x_train4], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2, x_val3, x_val4], [y_val1, y_val2]), batch_size=batch_size, verbose=1)
+        [x_train1, x_train2, x_train3, x_train4], [y_train1, y_train2], epochs=num_epoch, validation_data=([x_val1, x_val2, x_val3, x_val4], [y_val1, y_val2]),  callbacks=[callback], batch_size=batch_size, verbose=1)
 
     # cross validation?
 
@@ -108,18 +111,23 @@ def train(x_train1, x_train2, x_train3, x_train4,  x_test1, x_test2, x_test3, x_
 
 
 def trainLiar(liar_train, liar_test, liar_val, processFunction, createModelFunction, createEmbeddingFunction, num_epoch):
-    liar_train = shuffle(liar_train)
-    liar_test = shuffle(liar_test)
-    liar_val = shuffle(liar_val)
+    liar_train = shuffle(liar_train, random_state=42)
+    liar_test = shuffle(liar_test, random_state=42)
+    liar_val = shuffle(liar_val, random_state=42)
 
     x_train1, x_train2, x_train3, x_train4, y_train1, y_train2 = processFunction(
         liar_train)
+    x_val1, x_val2, x_val3, x_val4, y_val1, y_val2 = processFunction(liar_val)
     x_test1, x_test2, x_test3, x_test4, y_test1, y_test2 = processFunction(
         liar_test)
-    x_val1, x_val2, x_val3, x_val4, y_val1, y_val2 = processFunction(liar_val)
 
     emb_matrix = createEmbeddingFunction(liar_train["statement"])
     print("Embedding Matrix Shape", emb_matrix.shape)
+
+    x_train3, x_test3, x_val3 = normalize(
+        x_train3), normalize(x_test3), normalize(x_val3)
+    x_train4, x_test4, x_val4 = normalize(
+        x_train4), normalize(x_test4), normalize(x_val4)
 
     train(x_train1, x_train2, x_train3, x_train4,  x_test1, x_test2, x_test3, x_test4,  x_val1, x_val2, x_val3, x_val4, y_train1,
           y_test1, y_val1, y_train2, y_test2, y_val2, emb_matrix, createEmbeddingFunction, createModelFunction, num_epoch)
@@ -131,23 +139,23 @@ def trainPoliti(data, processFunction, createModelFunction, createEmbeddingFunct
     # dont shuffle before random state? not really, weird
 
     p_train, p_test = train_test_split(
-        data, test_size=0.1, random_state=1, shuffle=True, stratify=data["label"])
+        data, test_size=0.21, random_state=1, shuffle=True, stratify=data["label"])
     p_train, p_val = train_test_split(
-        data, test_size=0.1, random_state=1, shuffle=True, stratify=data["label"])
+        data, test_size=0.21, random_state=1, shuffle=True, stratify=data["label"])
 
     x_train1, x_train2, x_train3, x_train4, y_train1, y_train2 = processFunction(
         p_train)
+    x_val1, x_val2, x_val3, x_val4, y_val1, y_val2 = processFunction(p_val)
     x_test1, x_test2, x_test3, x_test4, y_test1, y_test2 = processFunction(
         p_test)
-    x_val1, x_val2, x_val3, x_val4, y_val1, y_val2 = processFunction(p_val)
+
+    emb_matrix = createEmbeddingFunction(p_train["statement"])
+    print("Embedding Matrix Shape", emb_matrix.shape)
 
     x_train3, x_test3, x_val3 = normalize(
         x_train3), normalize(x_test3), normalize(x_val3)
     x_train4, x_test4, x_val4 = normalize(
         x_train4), normalize(x_test4), normalize(x_val4)
-
-    emb_matrix = createEmbeddingFunction(p_train["statement"])
-    print("Embedding Matrix Shape", emb_matrix.shape)
 
     train(x_train1, x_train2, x_train3, x_train4,  x_test1, x_test2, x_test3, x_test4,  x_val1, x_val2, x_val3, x_val4, y_train1, y_test1,
           y_val1, y_train2, y_test2, y_val2, emb_matrix, createEmbeddingFunction, createModelFunction, num_epoch)
