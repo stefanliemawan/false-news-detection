@@ -139,7 +139,6 @@ def word2vecMatrix(statements):
     word_index = statement_tokenizer.word_index
     w2v = gensim.models.KeyedVectors.load_word2vec_format(
         "./word2vec/GoogleNews-vectors-negative300.bin", limit=50000, binary=True)
-    # limit max around 1m
 
     sentences = [sentence.split() for sentence in statements]
     maxlen = max([len(x) for x in sentences])
@@ -194,6 +193,7 @@ def processLiar(data):
     party = encode(party_encoder, data["party"], False)
     context = encode(context_encoder, data["context"], False)
 
+    # t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
     ht_counts = np.array(data["half true counts"]).astype(int)
     mf_counts = np.array(data["mostly false counts"]).astype(int)
@@ -212,6 +212,8 @@ def processLiar(data):
         (subject, speaker, sjt, state, party, context))
     x3 = np.column_stack((mt_counts,
                           ht_counts, mf_counts, f_counts, pf_counts))
+    # x3 = np.column_stack((t_counts,mt_counts,
+    #                       ht_counts, mf_counts, f_counts, pf_counts))
     x4 = np.column_stack((polarity, sentiment, tags))
     # x4 = tags
 
@@ -241,7 +243,7 @@ def processPoliti(data):
 
     polarity = np.array(data["polarity"]).astype(int)
     sentiment = encode(sentiment_encoder, data["sentiment"], False)
-    tags = np.array(data.loc[:, "''":"WRB"]).astype(int)
+    tags = np.array(data.loc[:, "CC":"VBZ"]).astype(int)
 
     label = encode(label_encoder, data["label"], True)
     subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)

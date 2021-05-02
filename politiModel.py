@@ -54,13 +54,15 @@ def politiModel(x1_shape, x2_shape, x3_shape, x4_shape, statement_vocab, metadat
     drop4_1 = Dropout(0.2, name="dropout_4_1")(dense4_1)
     # subjectivity is low
 
-    x = concatenate([drop1_1, drop2_1, drop3_1])
+    x = concatenate([drop1_1, drop2_1, drop3_1, drop4_1])
+    # x = Dense(x.shape[1], activation="relu")(x)
     # x = concatenate([flat1_1, lstm2_1, dense3_1])
-    y = concatenate([drop1_1, drop4_1])
+    # y = concatenate([drop1_1, drop2_1, dense4_1])
+    # y = Dense(64, activation="relu")(y)
     # y = Dense(y.shape[1], activation="relu")(y)
 
     y1 = Dense(n_output1, activation="softmax", name="output_1")(x)
-    y2 = Dense(n_output2, activation="softmax", name="output_2")(x4)
+    y2 = Dense(n_output2, activation="softmax", name="output_2")(x)
     # subjectivity = 0.53 val
     model = keras.Model(inputs=[x1, x2, x3, x4], outputs=[y1, y2])
     return model

@@ -293,9 +293,7 @@ def initMergedPolitifact():
     print(data["subjectivity"].value_counts())
 
     data.to_csv("./cleanDatasets/clean_merged_politifact.csv", index=False)
-
     data = fillMissingMetadata(data)
-
     data.to_csv(
         "./cleanDatasets/clean_merged_politifact+.csv", index=False)
 
@@ -312,7 +310,7 @@ def fillMissingMetadata(data):
     if "true counts" not in data.columns:
         data["true counts"] = pd.Series(None, index=data.index)
     data = data.merge(profiles, how="left", on="speaker", suffixes=("_x", ""))
-    print(data.columns.values)
+    # print(data.columns.values)
 
     data["speaker's job title"].fillna(
         data["speaker's job title_x"], inplace=True)
@@ -345,7 +343,7 @@ def fillMissingMetadata(data):
         lambda group: group.ffill())
     data.dropna(subset=["statement"], inplace=True)
 
-    print(data[["speaker", "speaker's job title"]].iloc[:50])
+    # print(data[["speaker", "speaker's job title"]].iloc[:50])
 
     print(data.columns.values)
     data = shuffle(data)
@@ -476,7 +474,7 @@ def sortByCount():
 
 
 def main():
-    initLIAR()
+    # initLIAR()
     # mergePolitifact()
     # initMergedPolitifact()
 
@@ -485,10 +483,10 @@ def main():
     # fillMergedPolitiFactWithProfiles()
     # initFakeNewsNet()
 
-    # profiles = pd.read_csv(
-    #     "./cleanDatasets/profiles.csv").reset_index(drop=True)
-    # print(profiles.isna().sum())
-    # print("")
+    profiles = pd.read_csv(
+        "./cleanDatasets/profiles.csv").reset_index(drop=True)
+    print(profiles.isna().sum())
+    print("")
 
     # data = pd.read_csv(
     #     "./cleanDatasets/clean_merged_politifact+_editeds.csv").reset_index(drop=True)
@@ -502,6 +500,30 @@ def main():
     # print(data.isna().sum())
     # data.to_csv(
     #     "./cleanDatasets/clean_merged_politifact+_editeds.csv", index=False)
+
+    data = pd.read_csv(
+        "./cleanDatasets/clean_merged_politifact.csv").reset_index(drop=True)
+    data = fillMissingMetadata(data)
+    data.to_csv(
+        "./cleanDatasets/clean_merged_politifact+.csv", index=False)
+
+    liar_train = pd.read_csv(
+        "./cleanDatasets/clean_liar_train.csv").reset_index(drop=True)
+    liar_train = fillMissingMetadata(liar_train)
+    liar_train.to_csv(
+        "./cleanDatasets/clean_liar_train+.csv", index=False)
+
+    liar_test = pd.read_csv(
+        "./cleanDatasets/clean_liar_test.csv").reset_index(drop=True)
+    liar_test = fillMissingMetadata(liar_test)
+    liar_test.to_csv(
+        "./cleanDatasets/clean_liar_test+.csv", index=False)
+
+    liar_val = pd.read_csv(
+        "./cleanDatasets/clean_liar_valid.csv").reset_index(drop=True)
+    liar_val = fillMissingMetadata(liar_val)
+    liar_val.to_csv(
+        "./cleanDatasets/clean_liar_valid+.csv", index=False)
 
     # clean subject as well?
 
