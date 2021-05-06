@@ -1,22 +1,21 @@
+from bert import tokenization
+import tensorflow_hub as hub
+from tokenizers import BertWordPieceTokenizer
+from transformers import BertTokenizer, TFBertModel, BertConfig
+from gensim.models.word2vec import Word2Vec
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import json
+import sys
+import os
+import calendar
+import gensim
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-import gensim
-import calendar
-import os
-import sys
-import json
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.preprocessing.text import Tokenizer
-from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_extraction.text import TfidfVectorizer
-from gensim.models.word2vec import Word2Vec
-# from gensim.scripts.glove2word2vec import glove2word2vec
-# glove2word2vec(glove_input_file, word2vec_output_file)
-
-
-# Tokenize
-# https://medium.com/@sthacruz/fake-news-classification-using-glove-and-long-short-term-memory-lstm-a48f1dd605ab
+tf.gfile = tf.io.gfile
 
 statement_tokenizer = Tokenizer(num_words=None)
 subject_tokenizer = Tokenizer()
@@ -35,9 +34,55 @@ subjectivity_encoder = LabelEncoder()
 statement_maxlen = 0
 vocab_size = 0
 
+# module_url = 'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/2'
+module_url = 'https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-128_A-2/2'
+bert_layer = hub.KerasLayer(module_url, trainable=True)
+vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
+do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
+bert_tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case)
+
+
+def returnBertLayer():
+    return bert_layer
+
 
 def returnVocabSize():
     return vocab_size
+
+
+def returnStatementMaxlen():
+    return statement_maxlen
+
+
+def tokenizeBertStatement(data):
+    global bert_tokenizer
+    global statement_maxlen
+
+    # max_len = 43
+    sequence = [x.split() for x in data]
+    maxlen = max([len(x) for x in sequence])
+    statement_maxlen = max(statement_maxlen, maxlen)
+
+    all_tokens = []
+    all_masks = []
+    all_segments = []
+
+    for text in data:
+        text = bert_tokenizer.tokenize(text)
+        text = text[:statement_maxlen-2]
+        input_sequence = ["[CLS]"] + text + ["[SEP]"]
+        pad_len = statement_maxlen - len(input_sequence)
+
+        tokens = bert_tokenizer.convert_tokens_to_ids(
+            input_sequence) + [0] * pad_len
+        pad_masks = [1] * len(input_sequence) + [0] * pad_len
+        segment_ids = [0] * statement_maxlen
+
+        all_tokens.append(tokens)
+        all_masks.append(pad_masks)
+        all_segments.append(segment_ids)
+
+    return np.array(all_tokens), np.array(all_masks), np.array(all_segments)
 
 
 def tokenizeStatement(data):
@@ -45,6 +90,7 @@ def tokenizeStatement(data):
     statement_tokenizer.fit_on_texts(data)
     sequences = statement_tokenizer.texts_to_sequences(data)
     word_index = statement_tokenizer.word_index
+
     global vocab_size
     vocab_size = len(word_index) + 1
     print("Statement Vocabulary size", vocab_size)
@@ -184,14 +230,14 @@ def fasttextMatrix(statements):
 
 
 def processLiar(data):
-    statement = tokenizeStatement(data["statement"],)
+    tokens, masks, segments = tokenizeBertStatement(data["statement"])
 
     subject = tokenizeSubject(data["subject"])
+    context = encode(context_encoder, data["context"], False)
     speaker = encode(speaker_encoder, data["speaker"], False)
     sjt = encode(sjt_encoder, data["speaker's job title"], False)
     state = encode(state_encoder, data["state"], False)
     party = encode(party_encoder, data["party"], False)
-    context = encode(context_encoder, data["context"], False)
 
     # t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
@@ -207,14 +253,15 @@ def processLiar(data):
     label = encode(label_encoder, data["label"], True)
     subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
 
-    x1 = statement
+    # x1 = statement
+    x1 = [tokens, masks, segments]
     x2 = np.column_stack(
-        (subject, speaker, sjt, state, party, context))
+        (subject,   context, speaker,  sjt, state, party))
     x3 = np.column_stack((mt_counts,
                           ht_counts, mf_counts, f_counts, pf_counts))
-    # x3 = np.column_stack((t_counts,mt_counts,
+    # x3 = np.column_stack((t_counts, mt_counts,
     #                       ht_counts, mf_counts, f_counts, pf_counts))
-    x4 = np.column_stack((polarity, sentiment, tags))
+    x4 = np.column_stack((polarity, tags))
     # x4 = tags
 
     y1 = label

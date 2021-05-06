@@ -56,7 +56,7 @@ def getPolarity(row):
     return polarity
 
 
-def applyToDF(df):
+def applySentimentToDF(df):
     df["polarity"] = df.apply(getPolarity, axis=1)
     # df["subjectiveWordsCount"] = df.apply(getSubjectiveWordsCount, axis=1)
     df["subjectivity"] = df.apply(
