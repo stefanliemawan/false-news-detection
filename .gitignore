@@ -8,3 +8,4 @@ prediction/
 models/
 graphs/
 __pycache__/
+.vscode/

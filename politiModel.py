@@ -13,6 +13,10 @@ import numpy as np
 import keras
 import tensorflow as tf
 import tensorflow_hub as hub
+from transformers import TFDistilBertModel
+
+
+dbert_model = TFDistilBertModel.from_pretrained('distilbert-base-uncased')
 
 
 def handleNaN(data):
@@ -22,74 +26,99 @@ def handleNaN(data):
     return data
 
 
-def politiModel(seq_length, x2_shape, x3_shape, x4_shape, metadata_vocab, n_output1, n_output2):
+def attentionModel(metadata_vocab):
+    # emb = Embedding(metadata_vocab, 128, trainable=True)
 
-    # regularizer = regularizers.l2(1)
-    regularizer = None
+    # a1 = tf.slice(x2, [0, 0], [-1, 3])
+    # a1 = x2[:,:3]
+    # emb_a1 = emb(a1)
+    # a2 = tf.slice(x2, [0, 3], [-1, 1])
+    # a2  = x2[:]
+    # emb_a2 = emb(a2)
 
-    input_word_ids = tf.keras.Input(
-        shape=(seq_length, ), dtype=tf.int32)
-    input_mask = tf.keras.Input(
-        shape=(seq_length, ), dtype=tf.int32)
-    input_type_ids = tf.keras.Input(
-        shape=(seq_length, ), dtype=tf.int32)
+    # att1_1 = Attention(name="att1_1")([drop1_1, emb_a1])
+    # att2_1 = Attention(name="att2_1")([drop1_1, emb_a2])
 
-    bert_layer = returnBertLayer()
+    # concat1_1 = Concatenate()([drop1_1, att1_1, att2_1])
+    # lstm1_1 = LSTM(32, recurrent_dropout=0.2, name="lstm1_1")(concat1_1)
 
-    outputs = bert_layer(
-        {"input_word_ids": input_word_ids, "input_mask": input_mask, "input_type_ids": input_type_ids})
-    print(outputs)
-    pooled_output = outputs["pooled_output"]
-    dense1_1 = Dense(128, activation="relu")(pooled_output)
-    dense1_2 = Dense(64, activation="relu")(dense1_1)
-    # seq_output = outputs["sequence_output"]
-    # lstm1_1 = LSTM(64, kernel_regularizer=regularizer)(seq_output)
-    # clf_output = sequence_output[:, 0, :]
+    # in2 = tf.slice(x2, [0, 4], [-1, 4])
+    # emb2_1 = emb(in2)
 
-    x2 = Input(shape=(x2_shape[1], ))
-    x3 = Input(shape=(x3_shape[1], ))
-    x4 = Input(shape=(x4_shape[1], ))
+    # score = tf.slice(x2, [0, -1], [-1, 1])
+    # lstm2_1 = LSTM(32, recurrent_dropout=0.2, name="lstm2_1")(emb2_1)
+    # mult2_1 = Multiply()([lstm2_1, score])
 
-    # emb = Embedding(
-    #     statement_vocab, emb_matrix.shape[1], weights=[emb_matrix], trainable=True, name="embedding_1_1")
+    # in3 = tf.slice(x2, [0, 0], [-1, -1])
+    # print(in3.shape)
+    # dense3_1 = Dense(
+    #     32, activation="relu", name="dense3_1")(in3)
 
-    # emb1_1 = emb(x1)
+    # x = Concatenate(name="final_concat")(
+    #     [lstm1_1, mult2_1, dense3_1, dense4_1])
+    # x = Multiply()([x, score])
+    # x = Dense(512, activation="relu")(x)
 
-    # cnn1_1 = Conv1D(32, 3, kernel_regularizer=regularizer,
-    #                 activation="relu", name="conv1d_1_1")(seq_output)
-    # mp1_1 = MaxPooling1D((seq_length - 3 + 1),
-    #                      name="max_pooling1D_1_1")(cnn1_1)
-    # cnn1_2 = Conv1D(32, 4, kernel_regularizer=regularizer,
-    #                 activation="relu", name="conv1d_1_2")(seq_output)
-    # mp1_2 = MaxPooling1D((seq_length - 4 + 1),
-    #                      name="max_pooling1D_1_2")(cnn1_2)
-    # cnn1_3 = Conv1D(32, 5, kernel_regularizer=regularizer,
-    #                 activation="relu", name="conv1d_1_3")(seq_output)
-    # mp1_3 = MaxPooling1D((seq_length - 5 + 1),
-    #                      name="max_pooling1D_1_3")(cnn1_3)
-
-    # concat1_1 = concatenate([mp1_1, mp1_2, mp1_3], name="concat_1_1")
-    # flat1_1 = Flatten(name="flatten_1_1")(concat1_1)
-
-    # drop1_1 = Dropout(0.2, name="dropout_1_1")(flat1_1)
-
-    # emb2_1 = Embedding(metadata_vocab, 100, trainable=True,
-    #                    name="embedding_2_1")(x2)
-    # lstm2_1 = LSTM(64,  kernel_regularizer=regularizer,
-    #                name="lstm_2_1")(emb2_1)
-
-    # dense3_1 = Dense(64, activation="relu", name="dense_3_1")(x3)
-
-    # dense4_1 = Dense(64, activation="relu", name="dense_4_1")(x4)
-
-    # x = concatenate([lstm1_1, lstm2_1, dense3_1])
-    # x = Dense(x.shape[1], activation="relu")(x)
-
-    y1 = Dense(n_output1, activation="softmax", name="output_1")(dense1_2)
-    y2 = Dense(n_output2, activation="softmax", name="output_2")(dense1_2)
+    y1 = Dense(n_output1, activation="softmax", name="output_1")(x)
+    y2 = Dense(n_output2, activation="softmax", name="output_2")(x)
 
     model = keras.Model(
-        inputs={"input_word_ids": input_word_ids, "input_mask": input_mask, "input_type_ids": input_type_ids, "x2": x2, "x3": x3, "x4": x4}, outputs=[y1, y2])
+        inputs=[x1, x2, x3], outputs=[y1, y2])
+    return model
+
+
+def politiModel(seq_length, md_length, x3_length, x4_length, n_output1, n_output2):
+    input_ids1 = Input(shape=(seq_length, ),
+                       dtype=tf.int32, name="input_ids1")
+    attention_mask1 = Input(shape=(seq_length, ),
+                            dtype=tf.int32, name="attention_mask1")
+
+    input_ids2 = Input(shape=(md_length, ),
+                       dtype=tf.int32, name="input_ids2")
+    attention_mask2 = Input(shape=(md_length, ),
+                            dtype=tf.int32, name="attention_mask2")
+
+    x3 = Input(shape=(x3_length,), name="x3")
+    x4 = Input(shape=(x4_length,), name="x4")
+
+    st_inputs = dict(
+        input_ids=input_ids1,
+        attention_mask=attention_mask1)
+
+    md_inputs = dict(
+        input_ids=input_ids2,
+        attention_mask=attention_mask2,)
+
+    bert_st = dbert_model(st_inputs)[0][:, 0, :]
+    # drop_st = Dropout(0.5)(bert_st)
+    # avg_st = AveragePooling1D(name="average_st")(bert_st)
+    # lstm_st = LSTM(32, name="lstm_st")(avg_st)
+
+    bert_md = dbert_model(md_inputs)[0][:, 0, :]
+    # drop_md = Dropout(0.5)(bert_md)
+    # avg_md = AveragePooling1D(name="average_md")(bert_md)
+    # lstm_md = LSTM(32, name="lstm_md")(avg_md)
+
+    # score = x3[:, -1]
+    # print(score.shape)
+    # counts = x3[:, :-2]
+    # print(counts.shape)
+
+    # dense3_1 = Dense(6, activation="relu")(counts)
+
+    x = Concatenate()([bert_st, bert_md])
+    # x = Add()([x, score])
+    x = Dense(768, activation="relu")(x)
+
+    y1 = Dense(n_output1, activation="softmax", name="output_1")(x)
+    y2 = Dense(n_output2, activation="softmax", name="output_2")(x)
+
+    model = keras.Model(
+        inputs=[{"input_ids": input_ids1,
+                 "attention_mask": attention_mask1},
+                {"input_ids": input_ids2,
+                 "attention_mask": attention_mask2},
+                x3, x4], outputs=[y1, y2])
     return model
 
 
@@ -116,6 +145,10 @@ def liar():
     # liar_test["true counts"].fillna(0, inplace=True)
     # liar_val["true counts"].fillna(0, inplace=True)
 
+    liar_train.loc[liar_train.state == "0", "state"] = "None"
+    liar_test.loc[liar_test.state == "0", "state"] = "None"
+    liar_val.loc[liar_val.state == "0", "state"] = "None"
+
     liar_train.fillna("None", inplace=True)
     liar_test.fillna("None", inplace=True)
     liar_val.fillna("None", inplace=True)
@@ -123,7 +156,7 @@ def liar():
     print(liar_train["label"].value_counts())
     print(liar_train["subjectivity"].value_counts())
 
-    num_epoch = 100
+    num_epoch = 50
     # best at 10 epoch
     trainLiar(liar_train, liar_test, liar_val, processLiar,
               politiModel, word2vecMatrix, num_epoch)
@@ -152,7 +185,7 @@ def politi():
     print(data["label"].value_counts())
     print(data["subjectivity"].value_counts())
 
-    num_epoch = 100
+    num_epoch = 50
     trainPoliti(data, processPoliti, politiModel,
                 word2vecMatrix, num_epoch)
 

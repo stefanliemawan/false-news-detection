@@ -1,7 +1,7 @@
 from bert import tokenization
 import tensorflow_hub as hub
 from tokenizers import BertWordPieceTokenizer
-from transformers import BertTokenizer, TFBertModel, BertConfig
+from transformers import BertTokenizer, TFBertModel, BertConfig, DistilBertTokenizer, DistilBertConfig
 from gensim.models.word2vec import Word2Vec
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
@@ -32,14 +32,22 @@ sentiment_encoder = LabelEncoder()
 subjectivity_encoder = LabelEncoder()
 
 statement_maxlen = 0
+metadata_maxlen = 8
 vocab_size = 0
 
-# module_url = 'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/2'
-module_url = 'https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-128_A-2/2'
-bert_layer = hub.KerasLayer(module_url, trainable=True)
-vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
-do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
-bert_tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case)
+# bert_tiny = "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-128_A-2/2"
+# bert_miny = "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-256_A-4/2"
+# bert_small = "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-512_A-8/2"
+# bert_medium = "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-512_A-8/2"
+# bert_base = "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/2"
+
+# bert_layer = hub.KerasLayer(bert_medium, trainable=True)
+# vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
+# do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
+# bert_tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case)
+
+dbert_tokenizer = DistilBertTokenizer.from_pretrained(
+    'distilbert-base-uncased')
 
 
 def returnBertLayer():
@@ -54,35 +62,35 @@ def returnStatementMaxlen():
     return statement_maxlen
 
 
-def tokenizeBertStatement(data):
-    global bert_tokenizer
+def returnMetadataMaxlen():
+    return metadata_maxlen
+
+
+def tokenizeBert(data, statement=True):
+    global dbert_tokenizer
     global statement_maxlen
+    global metadata_maxlen
 
-    # max_len = 43
-    sequence = [x.split() for x in data]
-    maxlen = max([len(x) for x in sequence])
-    statement_maxlen = max(statement_maxlen, maxlen)
+    maxlen = 45
+    # sequence = [x.split() for x in data]
+    # maxlen = max([len(x) for x in sequence]) + 2
+    # statement_maxlen = max(statement_maxlen, maxlen)
+    # maxlen = statement_maxlen
+    if statement == False:
+        data = [" ".join(x) for x in data.values]
+        # applied as a sentence
 
-    all_tokens = []
-    all_masks = []
-    all_segments = []
+    input_ids = []
+    attention_mask = []
 
     for text in data:
-        text = bert_tokenizer.tokenize(text)
-        text = text[:statement_maxlen-2]
-        input_sequence = ["[CLS]"] + text + ["[SEP]"]
-        pad_len = statement_maxlen - len(input_sequence)
+        encoding = dbert_tokenizer.encode_plus(
+            text, add_special_tokens=True, max_length=maxlen, padding="max_length", truncation=True)
 
-        tokens = bert_tokenizer.convert_tokens_to_ids(
-            input_sequence) + [0] * pad_len
-        pad_masks = [1] * len(input_sequence) + [0] * pad_len
-        segment_ids = [0] * statement_maxlen
+        input_ids.append(encoding["input_ids"])
+        attention_mask.append(encoding["attention_mask"])
 
-        all_tokens.append(tokens)
-        all_masks.append(pad_masks)
-        all_segments.append(segment_ids)
-
-    return np.array(all_tokens), np.array(all_masks), np.array(all_segments)
+    return np.asarray(input_ids).astype(int), np.asarray(attention_mask).astype(int)
 
 
 def tokenizeStatement(data):
@@ -118,7 +126,7 @@ def tokenizeSubject(data):
     # maxlen = 20
 
     padded_sequences = pad_sequences(
-        sequences, padding="post", truncating="post", maxlen=3)
+        sequences, padding="post", truncating="post", maxlen=maxlen)
     # print("Shape of data tensor: ", padded_sequences.shape)
     return np.array(padded_sequences)
 
@@ -229,15 +237,27 @@ def fasttextMatrix(statements):
     return emb_matrix
 
 
-def processLiar(data):
-    tokens, masks, segments = tokenizeBertStatement(data["statement"])
+def bertMatrix(statements):
+    pass
+    # bert = BertModel.from_pretrained(BERT_FP)
+    # bert_embeddings = list(bert.children())[0]
+    # bert_word_embeddings = list(bert_embeddings.children())[0]
+    # mat = bert_word_embeddings.weight.data.numpy()
+    # return mat
 
-    subject = tokenizeSubject(data["subject"])
-    context = encode(context_encoder, data["context"], False)
-    speaker = encode(speaker_encoder, data["speaker"], False)
-    sjt = encode(sjt_encoder, data["speaker's job title"], False)
-    state = encode(state_encoder, data["state"], False)
-    party = encode(party_encoder, data["party"], False)
+
+def processLiar(data):
+    input_ids1, attention_mask1 = tokenizeBert(
+        data["statement"], True)
+    input_ids2, attention_mask2 = tokenizeBert(
+        data[["speaker", "speaker's job title", "state", "party", "context", "subject"]], False)
+
+    # subject = tokenizeSubject(data["subject"])
+    # context = encode(context_encoder, data["context"], False)
+    # speaker = encode(speaker_encoder, data["speaker"], False)
+    # sjt = encode(sjt_encoder, data["speaker's job title"], False)
+    # state = encode(state_encoder, data["state"], False)
+    # party = encode(party_encoder, data["party"], False)
 
     # t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
@@ -245,6 +265,7 @@ def processLiar(data):
     mf_counts = np.array(data["mostly false counts"]).astype(int)
     f_counts = np.array(data["false counts"]).astype(int)
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
+    score = np.array(data["credit score"]).astype(int)
 
     polarity = np.array(data["polarity"]).astype(int)
     sentiment = encode(sentiment_encoder, data["sentiment"], False)
@@ -253,15 +274,14 @@ def processLiar(data):
     label = encode(label_encoder, data["label"], True)
     subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
 
-    # x1 = statement
-    x1 = [tokens, masks, segments]
-    x2 = np.column_stack(
-        (subject,   context, speaker,  sjt, state, party))
+    x1 = {"input_ids": input_ids1,
+          "attention_mask": attention_mask1}
+    x2 = {"input_ids": input_ids2,
+          "attention_mask": attention_mask2}
+
     x3 = np.column_stack((mt_counts,
                           ht_counts, mf_counts, f_counts, pf_counts))
-    # x3 = np.column_stack((t_counts, mt_counts,
-    #                       ht_counts, mf_counts, f_counts, pf_counts))
-    x4 = np.column_stack((polarity, tags))
+    x4 = np.column_stack((score, polarity, tags))
     # x4 = tags
 
     y1 = label
@@ -271,15 +291,18 @@ def processLiar(data):
 
 
 def processPoliti(data):
-    statement = tokenizeStatement(data["statement"])
+    tokens1, masks1, segments1 = tokenizeBert(
+        data["statement"], True)
+    tokens2, masks2, segments2 = tokenizeBert(
+        data[["speaker", "speaker's job title", "state", "party", "context", "subject"]], False)
 
-    subject = tokenizeSubject(data["subject"])
-    speaker = encode(speaker_encoder, data["speaker"], False)
-    sjt = encode(sjt_encoder, data["speaker's job title"], False)
-    state = encode(state_encoder, data["state"], False)
-    party = encode(party_encoder, data["party"], False)
-    date = handleDate(data['date'])
-    context = encode(context_encoder, data["context"], False)
+    # subject = tokenizeSubject(data["subject"])
+    # speaker = encode(speaker_encoder, data["speaker"], False)
+    # sjt = encode(sjt_encoder, data["speaker's job title"], False)
+    # state = encode(state_encoder, data["state"], False)
+    # party = encode(party_encoder, data["party"], False)
+    # date = handleDate(data['date'])
+    # context = encode(context_encoder, data["context"], False)
 
     t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
@@ -287,6 +310,7 @@ def processPoliti(data):
     mf_counts = np.array(data["mostly false counts"]).astype(int)
     f_counts = np.array(data["false counts"]).astype(int)
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
+    score = np.array(data["credit score"]).astype(int)
 
     polarity = np.array(data["polarity"]).astype(int)
     sentiment = encode(sentiment_encoder, data["sentiment"], False)
@@ -295,11 +319,14 @@ def processPoliti(data):
     label = encode(label_encoder, data["label"], True)
     subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
 
-    x1 = statement
-    x2 = np.column_stack((subject, speaker, sjt, state, party, context, date))
-    x3 = np.column_stack((t_counts, mt_counts,
+    x1 = {"input_word_ids": tokens1, "input_mask": masks1,
+          "input_type_ids": segments1}
+    x2 = {"input_word_ids": tokens2, "input_mask": masks2,
+          "input_type_ids": segments2}
+    # x2 = np.column_stack((subject, speaker, sjt, state, party, context, date))
+    x3 = np.column_stack((mt_counts,
                           ht_counts, mf_counts, f_counts, pf_counts))
-    x4 = np.column_stack((polarity, sentiment, tags))
+    x4 = np.column_stack((score, polarity, tags))
 
     y1 = label
     y2 = subjectivity
