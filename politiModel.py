@@ -1,18 +1,11 @@
 from train import train, trainLiar, trainPoliti
-from tokenization import processPoliti, processLiar, gloveMatrix, word2vecMatrix, fasttextMatrix, returnVocabSize, returnBertLayer
-from tensorflow.keras.constraints import max_norm, unit_norm
-from sklearn.utils import shuffle
-from keras.utils import np_utils
+from tokenization import processPoliti, processLiar, gloveMatrix, word2vecMatrix, fasttextMatrix
 from tensorflow.keras import regularizers, initializers, optimizers, callbacks
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import *
-from sklearn.metrics import confusion_matrix, classification_report
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import keras
 import tensorflow as tf
-import tensorflow_hub as hub
 from transformers import TFDistilBertModel
 
 
@@ -89,26 +82,32 @@ def politiModel(seq_length, md_length, x3_length, x4_length, n_output1, n_output
         input_ids=input_ids2,
         attention_mask=attention_mask2,)
 
-    bert_st = dbert_model(st_inputs)[0][:, 0, :]
-    # drop_st = Dropout(0.5)(bert_st)
+    # bert_st = dbert_model(st_inputs)[0][:, 0, :]
+    bert_st = dbert_model(st_inputs)[0]
+    drop_st = Dropout(0.5)(bert_st)
     # avg_st = AveragePooling1D(name="average_st")(bert_st)
-    # lstm_st = LSTM(32, name="lstm_st")(avg_st)
+    # max_st = MaxPooling1D(name="maxpooling_st")(bert_st)
+    lstm_st = LSTM(256, recurrent_dropout=0.2, name="lstm_st")(drop_st)
 
-    bert_md = dbert_model(md_inputs)[0][:, 0, :]
-    # drop_md = Dropout(0.5)(bert_md)
+    # bert_md = dbert_model(md_inputs)[0][:, 0, :]
+    bert_md = dbert_model(md_inputs)[0]
+    drop_md = Dropout(0.5)(bert_md)
     # avg_md = AveragePooling1D(name="average_md")(bert_md)
-    # lstm_md = LSTM(32, name="lstm_md")(avg_md)
+    # max_md = MaxPooling1D(name="maxpooling_md")(bert_md)
+    lstm_md = LSTM(256, recurrent_dropout=0.2, name="lstm_md")(drop_md)
 
-    # score = x3[:, -1]
+    score = x4[:, 0]
     # print(score.shape)
     # counts = x3[:, :-2]
     # print(counts.shape)
 
-    # dense3_1 = Dense(6, activation="relu")(counts)
+    dense3_1 = Dense(128, activation="relu")(x3)
 
-    x = Concatenate()([bert_st, bert_md])
-    # x = Add()([x, score])
-    x = Dense(768, activation="relu")(x)
+    x = Concatenate()([lstm_st, lstm_md, dense3_1])
+    x = Add()([x, score])
+    x = Dense(512, kernel_regularizer=regularizers.l2(
+        0.01), activation="relu")(x)
+    x = Dropout(0.5)(x)
 
     y1 = Dense(n_output1, activation="softmax", name="output_1")(x)
     y2 = Dense(n_output2, activation="softmax", name="output_2")(x)

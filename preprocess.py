@@ -194,7 +194,7 @@ def cleanDataText(data):  # Preprocess text
     return data
 
 
-def substractCount(data):  # Substract current label from the history count
+def substractCount(data): # Substract current label from the history count + calculate credit score
     for index, row in data.iterrows():
         label = row.label.lower()
         label = label.replace("-", " ")
