@@ -9,7 +9,6 @@ import re
 import numpy as np
 from nltk.corpus import stopwords
 from sklearn.utils import shuffle
-from collections import Counter
 from nltk.stem import WordNetLemmatizer, PorterStemmer, SnowballStemmer
 from sklearn.utils import shuffle
 # nltk.download("stopwords")
@@ -51,22 +50,6 @@ def lemmatize(text):  # Lemmatize text
 
 def stem(text):  # Stem text
     return " ".join([stemmer.stem(w) for w in w_tokenizer.tokenize(text)])
-
-
-def addTags(data):  # Add POS TAGS to DataFrame
-    tags = sorted(set(["CC", "CD", "DT", "IN",
-                       "JJ", "JJR", "JJS", "MD", "NN", "NNS", "NNP", "NNPS", "PRP", "PRP$", "RB", "RBR", "RBS", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ"]))
-    for t in tags:
-        data[t] = 0
-
-    for index, row in data.iterrows():
-        sentence = nltk.pos_tag(nltk.word_tokenize(str(row["statement"])))
-        count = Counter([j for i, j in sentence])
-        for tag in list(count):
-            if tag in tags:
-                data.at[index, tag] = int(count[tag])
-    data.fillna(0, inplace=True)
-    return data
 
 
 # Add Apostrophe to contraction words so that they are recognized as stop words (especially in LIAR)
@@ -155,7 +138,6 @@ def cleanContractions(data):
 
 def cleanDataText(data):  # Preprocess text
     data = simplifyLabel(data)
-    data = addTags(data)
 
     data["raw"] = data["statement"]
     data["statement"] = data["statement"].str.lower()
@@ -194,7 +176,7 @@ def cleanDataText(data):  # Preprocess text
     return data
 
 
-def substractCount(data): # Substract current label from the history count + calculate credit score
+def subtractCount(data):  # Subtract current label from the history count + calculate credit score
     for index, row in data.iterrows():
         label = row.label.lower()
         label = label.replace("-", " ")
@@ -202,6 +184,7 @@ def substractCount(data): # Substract current label from the history count + cal
         if col in data.columns and row[col] > 0:
             data.loc[index, col] -= 1
 
+        # Calculate score
         mt = row["mostly true counts"]
         ht = row["half true counts"]
         mf = row["mostly false counts"]
@@ -224,7 +207,7 @@ def initLIAR():  # initialize LIAR dataset
     liar_train = cleanDataText(liar_train)
     liar_train.rename(
         columns={"barely true counts": "mostly false counts"}, inplace=True)
-    liar_train = substractCount(liar_train)
+    liar_train = subtractCount(liar_train)
     print(liar_train.loc[0])
     liar_train.to_csv(
         "./cleanDatasets/clean_liar_train.csv", index=False)
@@ -238,7 +221,7 @@ def initLIAR():  # initialize LIAR dataset
     liar_test = cleanDataText(liar_test)
     liar_test.rename(
         columns={"barely true counts": "mostly false counts"}, inplace=True)
-    liar_test = substractCount(liar_test)
+    liar_test = subtractCount(liar_test)
     liar_test.to_csv(
         "./cleanDatasets/clean_liar_test.csv", index=False)
     liar_test = fillMissingMetadata(liar_test)
@@ -251,7 +234,7 @@ def initLIAR():  # initialize LIAR dataset
     liar_val = cleanDataText(liar_val)
     liar_val.rename(
         columns={"barely true counts": "mostly false counts"}, inplace=True)
-    liar_val = substractCount(liar_val)
+    liar_val = subtractCount(liar_val)
     liar_val.to_csv(
         "./cleanDatasets/clean_liar_valid.csv", index=False)
     liar_val = fillMissingMetadata(liar_val)
@@ -280,7 +263,7 @@ def mergePoliti():  # Merge scraped dataset with LIAR
     data.to_csv("./datasets/merged_politifact.csv", index=False)
 
 
-def initMergedPoliti():  # Initialize POLITI dataset
+def initPoliti():  # Initialize POLITI dataset
     data = pd.read_csv(
         "./datasets/merged_politifact.csv").reset_index(drop=True)
     data = applySentimentToDF(data)  # from subjectivity
@@ -290,15 +273,15 @@ def initMergedPoliti():  # Initialize POLITI dataset
     print(data["label"].value_counts())
     print(data["subjectivity"].value_counts())
 
-    data.to_csv("./cleanDatasets/clean_merged_politifact.csv", index=False)
+    data.to_csv("./cleanDatasets/politi.csv", index=False)
     data = fillMissingMetadata(data)
     data.to_csv(
-        "./cleanDatasets/clean_merged_politifact+.csv", index=False)
+        "./cleanDatasets/politi+.csv", index=False)
 
 
-# use speaker-profile (profiles.csv) to fill values in parameter dataset
+# use speaker-profile (speaker-profiles.csv) to fill values in parameter dataset
 def fillMissingMetadata(data):
-    profiles = pd.read_csv("./cleanDatasets/profiles.csv")
+    profiles = pd.read_csv("./cleanDatasets/speaker-profiles.csv")
     # data.sort_values(by=["speaker", "speaker's job title",
     #                      "state", "party", "true counts", "mostly true counts",	"half true counts",	"mostly false counts", "false counts", "pants on fire counts"], inplace=True)
     # data.sort_values(by=["speaker"], inplace=True)
@@ -338,7 +321,7 @@ def fillMissingMetadata(data):
 
     data = data.groupby(["speaker"], as_index=False).apply(
         lambda group: group.ffill())
-    data = substractCount(data)
+    data = subtractCount(data)
 
     data = shuffle(data)
     return data
@@ -353,7 +336,7 @@ def fillProfilesWithLIARState():  # Use LIAR State information to fill speaker-p
         "./datasets/LIAR/liar_valid_labeled.csv").reset_index(drop=True)
     liar = pd.concat([liar_train, liar_test, liar_val])
     profiles = pd.read_csv(
-        "./cleanDatasets/profiles.csv").reset_index(drop=True)
+        "./cleanDatasets/speaker-profiles.csv").reset_index(drop=True)
     liar = liar[["speaker", "speaker's job title", "state", "party"]]
     liar["speaker"] = liar["speaker"].str.title()
     liar["speaker"] = liar["speaker"].str.replace("-", " ")
@@ -366,14 +349,14 @@ def fillProfilesWithLIARState():  # Use LIAR State information to fill speaker-p
     profiles.drop(["state_x"], axis=1, inplace=True)
 
     profiles.to_csv(
-        "./cleanDatasets/profiles.csv", index=False)
+        "./cleanDatasets/speaker-profiles.csv", index=False)
 
 
 def sortByCount():  # Sort dataset by count, debugging and data viewing purpose only
     data = pd.read_csv(
-        "./cleanDatasets/clean_merged_politifact+_editeds.csv").reset_index(drop=True)
+        "./cleanDatasets/politi+_editeds.csv").reset_index(drop=True)
     profiles = pd.read_csv(
-        "./cleanDatasets/profiles.csv").reset_index(drop=True)
+        "./cleanDatasets/speaker-profiles.csv").reset_index(drop=True)
 
     data["speaker"] = data["speaker"].str.title()
     profiles["speaker"] = profiles["speaker"].str.title()
@@ -389,23 +372,23 @@ def sortByCount():  # Sort dataset by count, debugging and data viewing purpose 
     profiles.drop_duplicates(subset="speaker", inplace=True)
 
     data.to_csv(
-        "./cleanDatasets/clean_merged_politifact+_editeds.csv", index=False)
+        "./cleanDatasets/politi+_editeds.csv", index=False)
 
     profiles.to_csv(
-        "./cleanDatasets/profiles.csv", index=False)
+        "./cleanDatasets/speaker-profiles.csv", index=False)
 
 
 def updateDataset():  # Update dataset after manually editing speaker-profile
     profiles = pd.read_csv(
-        "./cleanDatasets/profiles.csv").reset_index(drop=True)
+        "./cleanDatasets/speaker-profiles.csv").reset_index(drop=True)
     print(profiles.isna().sum())
     print("")
 
     politi = pd.read_csv(
-        "./cleanDatasets/clean_merged_politifact.csv").reset_index(drop=True)
+        "./cleanDatasets/politi.csv").reset_index(drop=True)
     politi = fillMissingMetadata(politi)
     politi.to_csv(
-        "./cleanDatasets/clean_merged_politifact+.csv", index=False)
+        "./cleanDatasets/politi+.csv", index=False)
 
     liar_train = pd.read_csv(
         "./cleanDatasets/clean_liar_train.csv").reset_index(drop=True)
@@ -429,7 +412,7 @@ def updateDataset():  # Update dataset after manually editing speaker-profile
 def main():
     initLIAR()
     mergePoliti()
-    initMergedPoliti()
+    initPoliti()
 
     # fillProfilesWithLIARState()
     # updateDataset()()

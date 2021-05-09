@@ -1,3 +1,5 @@
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from bert import tokenization
 from tokenizers import BertWordPieceTokenizer
 from transformers import DistilBertTokenizer, DistilBertConfig
@@ -25,7 +27,10 @@ label_encoder = LabelEncoder()
 sentiment_encoder = LabelEncoder()
 subjectivity_encoder = LabelEncoder()
 
-g_maxlen = 0
+subject_tokenizer = Tokenizer()
+
+st_maxlen = 0
+md_maxlen = 0
 vocab_size = 0
 
 # Define DistilBERT
@@ -35,27 +40,54 @@ dbert_tokenizer = DistilBertTokenizer.from_pretrained(
 
 def tokenizeBert(data, statement=True):  # Tokenization for DistilBERT
     global dbert_tokenizer
-    global g_maxlen
+    global st_maxlen
+    global md_maxlen
 
-    maxlen = 45
-    sequence = [x.split() for x in data]
-    maxlen = max([len(x) for x in sequence]) + 2
-    g_maxlen = max(g_maxlen, maxlen)
-    # maxlen = statement_maxlen
-    if statement == False:
+    if statement == True:
+        sequence = [x.split() for x in data]
+        maxlen = max([len(x) for x in sequence]) + 2
+        st_maxlen = max(st_maxlen, maxlen)
+        maxlen = st_maxlen
+    else:
+        data["subject"] = data["subject"].str.replace(",", " ")
+        if "date" in data.columns:
+            data["date"] = data["date"].str.replace(",", " ")
+
         data = [" ".join(x) for x in data.values]
+        sequence = [x.split() for x in data]
+
+        maxlen = max([len(x) for x in sequence])+2
+        md_maxlen = max(md_maxlen, maxlen)
+        maxlen = md_maxlen
 
     input_ids = []
     attention_mask = []
 
     for text in data:
         encoding = dbert_tokenizer.encode_plus(
-            text, add_special_tokens=True, max_length=g_maxlen, padding="max_length", truncation=True)
+            text, add_special_tokens=True, max_length=maxlen, padding="max_length", truncation=True)
 
         input_ids.append(encoding["input_ids"])
         attention_mask.append(encoding["attention_mask"])
 
     return np.asarray(input_ids).astype(int), np.asarray(attention_mask).astype(int)
+
+
+def tokenizeSubject(data):
+    global subject_tokenizer
+    data = [x.split(",") for x in data]
+    subject_tokenizer.fit_on_texts(data)
+    sequences = subject_tokenizer.texts_to_sequences(data)
+    word_index = subject_tokenizer.word_index
+    # print("Vocabulary size: ", len(word_index))
+    maxlen = max([len(x) for x in sequences])
+    # print("Subject", np.mean([len(x) for x in sequences]))
+    # maxlen = 20
+
+    padded_sequences = pad_sequences(
+        sequences, padding="post", truncating="post", maxlen=5)
+    # print("Shape of data tensor: ", padded_sequences.shape)
+    return np.array(padded_sequences)
 
 
 def encode(encoder, data, onehot):  # Encode function
@@ -162,30 +194,26 @@ def fasttextMatrix(statements):  # Create FastText embedding matrix
     return emb_matrix
 
 
-def processLiar(data):  # Main function to handle all preprocessing of different columns (LIAR)
+def process(data):  # Main function to handle all preprocessing of different columns
     input_ids1, attention_mask1 = tokenizeBert(
         data["statement"], True)
-    input_ids2, attention_mask2 = tokenizeBert(
-        data[["speaker", "speaker's job title", "state", "party", "context", "subject"]], False)
+    if "date" in data.columns:
+        input_ids2, attention_mask2 = tokenizeBert(
+            data[["speaker", "speaker's job title", "state", "party", "date", "context", "subject"]], False)
+    else:
+        input_ids2, attention_mask2 = tokenizeBert(
+            data[["speaker", "speaker's job title", "state", "party", "context", "subject"]], False)
 
-    # subject = tokenizeSubject(data["subject"])
-    # context = encode(context_encoder, data["context"], False)
-    # speaker = encode(speaker_encoder, data["speaker"], False)
-    # sjt = encode(sjt_encoder, data["speaker's job title"], False)
-    # state = encode(state_encoder, data["state"], False)
-    # party = encode(party_encoder, data["party"], False)
+    score = np.array(data["credit score"]).astype(int)
 
-    # t_counts = np.array(data["true counts"]).astype(int)
+    if "true counts" in data.columns:
+        t_counts = np.array(data["true counts"]).astype(int)
     mt_counts = np.array(data["mostly true counts"]).astype(int)
     ht_counts = np.array(data["half true counts"]).astype(int)
     mf_counts = np.array(data["mostly false counts"]).astype(int)
     f_counts = np.array(data["false counts"]).astype(int)
     pf_counts = np.array(data["pants on fire counts"]).astype(int)
-    score = np.array(data["credit score"]).astype(int)
-
     polarity = np.array(data["polarity"]).astype(int)
-    sentiment = encode(sentiment_encoder, data["sentiment"], False)
-    tags = np.array(data.loc[:, "CC":"VBZ"]).astype(int)
 
     label = encode(label_encoder, data["label"], True)
     subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
@@ -194,57 +222,16 @@ def processLiar(data):  # Main function to handle all preprocessing of different
           "attention_mask": attention_mask1}
     x2 = {"input_ids": input_ids2,
           "attention_mask": attention_mask2}
+    x3 = np.reshape(score, (-1, 1))
 
-    x3 = np.column_stack((mt_counts,
-                          ht_counts, mf_counts, f_counts, pf_counts))
-    x4 = np.column_stack((score, polarity, tags))
-
-    y1 = label
-    y2 = subjectivity
-
-    return x1, x2, x3, x4, y1, y2
-
-
-# Main function to handle all preprocessing of different columns (POLITI)
-def processPoliti(data):
-    input_ids1, attention_mask1 = tokenizeBert(
-        data["statement"], True)
-    input_ids2, attention_mask2 = tokenizeBert(
-        data[["speaker", "speaker's job title", "state", "party", "context", "subject"]], False)
-
-    # subject = tokenizeSubject(data["subject"])
-    # speaker = encode(speaker_encoder, data["speaker"], False)
-    # sjt = encode(sjt_encoder, data["speaker's job title"], False)
-    # state = encode(state_encoder, data["state"], False)
-    # party = encode(party_encoder, data["party"], False)
-    # date = handleDate(data['date'])
-    # context = encode(context_encoder, data["context"], False)
-
-    t_counts = np.array(data["true counts"]).astype(int)
-    mt_counts = np.array(data["mostly true counts"]).astype(int)
-    ht_counts = np.array(data["half true counts"]).astype(int)
-    mf_counts = np.array(data["mostly false counts"]).astype(int)
-    f_counts = np.array(data["false counts"]).astype(int)
-    pf_counts = np.array(data["pants on fire counts"]).astype(int)
-    score = np.array(data["credit score"]).astype(int)
-
-    polarity = np.array(data["polarity"]).astype(int)
-    sentiment = encode(sentiment_encoder, data["sentiment"], False)
-    tags = np.array(data.loc[:, "CC":"VBZ"]).astype(int)
-
-    label = encode(label_encoder, data["label"], True)
-    subjectivity = encode(subjectivity_encoder, data["subjectivity"], True)
-
-    x1 = {"input_ids": input_ids1,
-          "attention_mask": attention_mask1}
-    x2 = {"input_ids": input_ids2,
-          "attention_mask": attention_mask2}
-    # x2 = np.column_stack((subject, speaker, sjt, state, party, context, date))
-    x3 = np.column_stack((t_counts, mt_counts,
-                          ht_counts, mf_counts, f_counts, pf_counts))
-    x4 = np.column_stack((score, polarity, tags))
+    if "true counts" in data.columns:
+        x4 = np.column_stack((t_counts, mt_counts,
+                              ht_counts, mf_counts, f_counts, pf_counts, polarity))
+    else:
+        x4 = np.column_stack((mt_counts,
+                              ht_counts, mf_counts, f_counts, pf_counts, polarity))
 
     y1 = label
     y2 = subjectivity
 
-    return x1, x2, x3, x4, y1, y2
+    return [x1, x2, x3, x4], [y1, y2]
