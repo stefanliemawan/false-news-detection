@@ -1,11 +1,7 @@
 datasets/
-cleanDatasets/
 glove/
 matrix/
 word2vec/
 fasttext/
-prediction/
-models/
-graphs/
 __pycache__/
 .vscode/

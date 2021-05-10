@@ -1,10 +1,11 @@
-# based on https://randerson112358.medium.com/scrape-a-political-website-for-fake-real-news-using-python-b4f5b2af830b
 from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 import urllib.request
 import time
 import re
+
+# Scrape statements and metadata
 
 labels = []
 statements = []

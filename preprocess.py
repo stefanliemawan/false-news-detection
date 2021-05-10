@@ -146,7 +146,6 @@ def cleanDataText(data):  # Preprocess text
     data["statement"] = data["statement"].str.replace(
         "â€™", " ", regex=False)  # this character appears in some rows
     data["statement"] = data["statement"].str.replace("'", " ", regex=False)
-    print(data["statement"].iloc[1500:1510])
     data["statement"] = data["statement"].map(lambda x: re.sub(
         r"\W+", " ", x))  # remove non-words character
     data["statement"] = data["statement"].map(
@@ -159,7 +158,6 @@ def cleanDataText(data):  # Preprocess text
 
     data["statement"] = data["statement"].apply(lemmatize)
     # data["statement"] = data["statement"].apply(stem)
-    # print(data["statement"].iloc[1500:1510])
 
     data["speaker"] = data["speaker"].str.replace("-", " ", regex=False)
     data["speaker"] = data["speaker"].str.replace("'", "", regex=False)
@@ -208,7 +206,6 @@ def initLIAR():  # initialize LIAR dataset
     liar_train.rename(
         columns={"barely true counts": "mostly false counts"}, inplace=True)
     liar_train = subtractCount(liar_train)
-    print(liar_train.loc[0])
     liar_train.to_csv(
         "./cleanDatasets/clean_liar_train.csv", index=False)
     liar_train = fillMissingMetadata(liar_train)
@@ -269,9 +266,6 @@ def initPoliti():  # Initialize POLITI dataset
     data = applySentimentToDF(data)  # from subjectivity
     data = cleanDataText(data)
     data.drop_duplicates(subset="statement", keep='last', inplace=True)
-
-    print(data["label"].value_counts())
-    print(data["subjectivity"].value_counts())
 
     data.to_csv("./cleanDatasets/politi.csv", index=False)
     data = fillMissingMetadata(data)
@@ -363,7 +357,6 @@ def sortByCount():  # Sort dataset by count, debugging and data viewing purpose 
 
     data["count"] = data.groupby(["speaker"])["speaker"].transform("count")
     data.sort_values(by=["count", "speaker"], ascending=False, inplace=True)
-    print(data[["speaker", "count"]].head())
 
     profiles = profiles.merge(
         data[["speaker", "count"]], how="left", on="speaker", suffixes=("_x", ""))

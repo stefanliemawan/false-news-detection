@@ -90,7 +90,6 @@ def liarEnhanced():  # Start on LIAR+ dataset
     liar_test.fillna("None", inplace=True)
     liar_val.fillna("None", inplace=True)
 
-    print("Full Data Shape = ", data.shape)
     print(liar_train["label"].value_counts())
     print(liar_train["subjectivity"].value_counts())
 
@@ -117,7 +116,6 @@ def liar():  # Start on LIAR dataset
     liar_test.fillna("None", inplace=True)
     liar_val.fillna("None", inplace=True)
 
-    print("Full Data Shape = ", data.shape)
     print(liar_train["label"].value_counts())
     print(liar_train["subjectivity"].value_counts())
 

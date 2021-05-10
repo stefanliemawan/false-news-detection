@@ -5,6 +5,7 @@ import urllib.request
 import time
 import re
 
+# Scrape speaker profile information
 
 politifact_url = "https://politifact.com/"
 a_regex = r"href=[\"\'](.*?)[\"\']"
