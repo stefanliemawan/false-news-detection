@@ -7,15 +7,6 @@ import keras
 import tensorflow as tf
 from transformers import TFDistilBertModel, DistilBertConfig
 
-# print(dbert_model.summary())
-
-
-# def handleNaN(data):
-#     for header in data.columns.values:
-#         data[header] = data[header].fillna(
-#             data[header][data[header].first_valid_index()])
-#     return data
-
 # DistilBERT
 config = DistilBertConfig(dropout=0.2,
                           attention_dropout=0.2,
@@ -50,12 +41,10 @@ def buildModel(seq_length, md_length, sco_length, his_length, n_output1, n_outpu
     dbert_st = dbert_model(st_inputs)[0]  # 3D output
     # dbert_st = dbert_model(st_inputs)[
     #     0][:, 0, :]  # 2D output, CLS only
-    # drop_st = Dropout(0.2, name="dropout_st")(dbert_st)
 
     dbert_md = dbert_model(md_inputs)[0]  # 3D output
     # dbert_md = dbert_model(md_inputs)[
     #     0][:, 0, :]  # 2D output, CLS only
-    # drop_md = Dropout(0.2, name="dropout_md")(dbert_md)
 
     dense_his = Dense(128, activation="relu")(history)
 
@@ -65,9 +54,6 @@ def buildModel(seq_length, md_length, sco_length, his_length, n_output1, n_outpu
     x = Concatenate()([x, dense_his])
     x = Dense(768, activation="relu")(x)
     x = Dropout(0.2)(x)
-
-    # lower subjectivity rating with multi head
-    # self multi head attention on statement data?
 
     y1 = Dense(n_output1, activation="softmax", name="output_1")(x)
     y2 = Dense(n_output2, activation="softmax", name="output_2")(x)
@@ -104,10 +90,11 @@ def liarEnhanced():  # Start on LIAR+ dataset
     liar_test.fillna("None", inplace=True)
     liar_val.fillna("None", inplace=True)
 
+    print("Full Data Shape = ", data.shape)
     print(liar_train["label"].value_counts())
     print(liar_train["subjectivity"].value_counts())
 
-    num_epoch = 6
+    num_epoch = 20
     trainLiar(liar_train, liar_test, liar_val, buildModel, num_epoch)
 
 
@@ -130,6 +117,7 @@ def liar():  # Start on LIAR dataset
     liar_test.fillna("None", inplace=True)
     liar_val.fillna("None", inplace=True)
 
+    print("Full Data Shape = ", data.shape)
     print(liar_train["label"].value_counts())
     print(liar_train["subjectivity"].value_counts())
 
@@ -141,11 +129,6 @@ def politi():  # Start on POLITI dataset
     data = pd.read_csv(
         "./cleanDatasets/politi+.csv").reset_index(drop=True)
 
-    # data = handleNaN(data)
-
-    # data = data.head(5000)
-    # print(data.isna().sum())
-
     data = data[data["false counts"].notna()]
 
     data["true counts"].fillna(0, inplace=True)
@@ -153,8 +136,6 @@ def politi():  # Start on POLITI dataset
     data.dropna(inplace=True)
 
     print("Full Data Shape = ", data.shape)
-    # data.drop(data[data["label"] == "FALSE"].iloc[3000:].index, inplace=True)
-    # print("Full Data Shape = ", data.shape)
     print(data["label"].value_counts())
     print(data["subjectivity"].value_counts())
 
@@ -164,6 +145,7 @@ def politi():  # Start on POLITI dataset
 
 def main():
     liar()
+    # liarEnhanced()
     # politi()
 
 

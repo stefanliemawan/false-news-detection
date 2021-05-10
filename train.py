@@ -13,18 +13,13 @@ from sklearn.preprocessing import normalize
 from tokenization import process
 
 optimizer = tf.keras.optimizers.Adam()
-# optimizer_ft = tf.keras.optimizers.Adam(learning_rate=5e-5)
 optimizer_ft = tfa.optimizers.AdamW(weight_decay=1e-5, learning_rate=5e-5)
-# optimizer = tfa.optimizers.AdamW(weight_decay=1e-5, learning_rate=3e-5)
-# optimizer = tfa.optimizers.AdamW(weight_decay=1e-5, learning_rate=5e-5)
-# optimizer = tfa.optimizers.AdamW(weight_decay=0.3, learning_rate=3e-3)
 loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 
 batch_size = 16
 
 
 def plot(history):  # Plot accuracy and loss
-    # print(history.history.keys())
     # "Accuracy"
     plt.plot(history.history["output_1_accuracy"])
     plt.plot(history.history["output_2_accuracy"])
@@ -94,7 +89,7 @@ def train(x_train,  y_train, x_test, y_test, x_val, y_val, createModelFunction, 
         seq_length, md_length, sco_length, his_length, n_output1, n_output2)
 
     early_stop = tf.keras.callbacks.EarlyStopping(
-        monitor='val_output_1_loss', patience=2)
+        monitor='val_output_1_loss', patience=3)
 
     # Freeze DBERT layers
     for layer in model.layers:
@@ -127,8 +122,6 @@ def train(x_train,  y_train, x_test, y_test, x_val, y_val, createModelFunction, 
     print("### EVALUATION ###")
     model.evaluate(x_test, y_test, verbose=1)
     plot(history)
-
-    # model.save("./models/10k-128kimcnn-100lstm-model1.h5")
 
 
 # Handle train, test, valid for LIAR
